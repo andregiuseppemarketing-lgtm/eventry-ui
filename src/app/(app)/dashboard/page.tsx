@@ -1,4 +1,5 @@
 import { mockStats } from '@/data/mock-stats';
+import { StatCard } from '@/components/ui/StatCard';
 
 export default function DashboardPage() {
   const stats = mockStats;
@@ -12,29 +13,30 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="text-sm text-gray-600 font-medium">Eventi Totali</div>
-          <div className="text-3xl font-bold text-gray-900 mt-2">{stats.totalEvents}</div>
-          <div className="text-sm text-green-600 mt-2">↑ 12% vs mese scorso</div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="text-sm text-gray-600 font-medium">Biglietti Venduti</div>
-          <div className="text-3xl font-bold text-gray-900 mt-2">{stats.totalTicketsSold.toLocaleString()}</div>
-          <div className="text-sm text-green-600 mt-2">↑ 8% vs mese scorso</div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="text-sm text-gray-600 font-medium">Ricavi Totali</div>
-          <div className="text-3xl font-bold text-gray-900 mt-2">€{stats.totalRevenue.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</div>
-          <div className="text-sm text-green-600 mt-2">↑ 15% vs mese scorso</div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="text-sm text-gray-600 font-medium">Utenti Attivi</div>
-          <div className="text-3xl font-bold text-gray-900 mt-2">{stats.activeUsers.toLocaleString()}</div>
-          <div className="text-sm text-green-600 mt-2">↑ 23% vs mese scorso</div>
-        </div>
+        <StatCard
+          title="Eventi Totali"
+          value={stats.totalEvents}
+          subtitle="↑ 12% vs mese scorso"
+          trend="up"
+        />
+        <StatCard
+          title="Biglietti Venduti"
+          value={stats.totalTicketsSold.toLocaleString()}
+          subtitle="↑ 8% vs mese scorso"
+          trend="up"
+        />
+        <StatCard
+          title="Ricavi Totali"
+          value={`€${stats.totalRevenue.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`}
+          subtitle="↑ 15% vs mese scorso"
+          trend="up"
+        />
+        <StatCard
+          title="Utenti Attivi"
+          value={stats.activeUsers.toLocaleString()}
+          subtitle="↑ 23% vs mese scorso"
+          trend="up"
+        />
       </div>
 
       {/* Recent Activity */}
