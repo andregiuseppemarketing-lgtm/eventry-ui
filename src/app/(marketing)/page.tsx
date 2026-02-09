@@ -8,7 +8,7 @@ export default function MarketingHome() {
         <div className="text-center space-y-8">
           <h1 className="text-6xl md:text-8xl font-bold tracking-tight">
             <span className="bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
-              EVENTRY
+              EVENTRY 🎉
             </span>
           </h1>
           
