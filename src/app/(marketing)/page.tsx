@@ -8,12 +8,12 @@ export default function MarketingHome() {
         <div className="text-center space-y-8">
           <h1 className="text-6xl md:text-8xl font-bold tracking-tight">
             <span className="bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
-              EVENTRY 🎉
+              EVENTRY
             </span>
           </h1>
           
           <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto">
-            La piattaforma definitiva per gestire eventi, biglietti e community
+            La piattaforma definitiva per gestire eventi, biglietti e community 🚀
           </p>
           
           <div className="flex gap-4 justify-center flex-wrap">
