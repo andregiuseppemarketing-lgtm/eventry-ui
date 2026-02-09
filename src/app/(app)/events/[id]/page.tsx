@@ -8,8 +8,13 @@ export function generateStaticParams() {
   }));
 }
 
-export default function EventDetailPage({ params }: { params: { id: string } }) {
-  const event = getEventById(params.id);
+export default async function EventDetailPage({ 
+  params 
+}: { 
+  params: Promise<{ id: string }> 
+}) {
+  const { id } = await params;
+  const event = getEventById(id);
 
   if (!event) {
     notFound();
