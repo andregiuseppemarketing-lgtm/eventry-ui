@@ -1,5 +1,5 @@
 import { mockAnalyticsData } from '@/data/mock-analytics';
-import { StatCard } from '@/components/ui/StatCard';
+import { StatCard } from '@/components/ui/stat-card';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 
 export default function AnalyticsPage() {
