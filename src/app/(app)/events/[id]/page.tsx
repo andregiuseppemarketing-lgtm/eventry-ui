@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { mockEvents, getEventById } from '@/data/mock-events';
 import { notFound } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Separator } from '@/components/ui/Separator';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 export function generateStaticParams() {
   return mockEvents.map((event) => ({
@@ -105,7 +105,7 @@ export default async function EventDetailPage({
             <Separator />
 
             <div className="flex gap-4">
-              <Button variant="primary">
+              <Button>
                 Modifica Evento
               </Button>
               <Button variant="secondary">

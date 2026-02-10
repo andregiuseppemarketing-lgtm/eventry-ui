@@ -1,7 +1,7 @@
 import { mockTickets } from '@/data/mock-tickets';
-import { Badge } from '@/components/ui/Badge';
-import { Card, CardHeader, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export default function TicketsPage() {
   return (
@@ -11,7 +11,7 @@ export default function TicketsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Biglietti</h1>
           <p className="text-gray-600 mt-1">Gestisci tutti i biglietti venduti</p>
         </div>
-        <Button variant="primary">
+        <Button>
           Nuovo Biglietto
         </Button>
       </div>
@@ -58,14 +58,14 @@ export default function TicketsPage() {
                       <div className="font-medium text-gray-900">{ticket.eventName}</div>
                     </td>
                     <td className="py-3 px-4">
-                      <div className="font-medium text-gray-900">{ticket.ownerName}</div>
-                      <div className="text-sm text-gray-500">{ticket.ownerEmail}</div>
+                      <div className="font-medium">{ticket.ownerName}</div>
+                      <div className="text-sm text-muted-foreground">{ticket.ownerEmail}</div>
                     </td>
                     <td className="py-3 px-4">
                       <Badge 
                         variant={
-                          ticket.type === 'vip' ? 'success' : 
-                          ticket.type === 'early-bird' ? 'warning' : 
+                          ticket.type === 'vip' ? 'secondary' : 
+                          ticket.type === 'early-bird' ? 'outline' : 
                           'default'
                         }
                       >
@@ -77,9 +77,9 @@ export default function TicketsPage() {
                     <td className="py-3 px-4">
                       <Badge 
                         variant={
-                          ticket.status === 'valid' ? 'success' : 
-                          ticket.status === 'used' ? 'default' : 
-                          'danger'
+                          ticket.status === 'valid' ? 'default' : 
+                          ticket.status === 'used' ? 'secondary' : 
+                          'destructive'
                         }
                       >
                         {ticket.status === 'valid' ? 'Valido' : 
@@ -87,7 +87,7 @@ export default function TicketsPage() {
                          'Cancellato'}
                       </Badge>
                     </td>
-                    <td className="py-3 px-4 text-gray-600">
+                    <td className="py-3 px-4 text-muted-foreground">
                       {new Date(ticket.purchaseDate).toLocaleDateString('it-IT')}
                     </td>
                     <td className="py-3 px-4 text-right font-semibold text-gray-900">

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 interface NavItem {
   label: string;
@@ -20,7 +21,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 min-h-screen p-6">
+    <aside className="w-64 border-r bg-card/50 backdrop-blur min-h-screen p-6">
       <nav className="space-y-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -28,11 +29,12 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`block px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={cn(
+                'block px-4 py-2 rounded-lg font-medium transition-all',
                 isActive
-                  ? 'bg-purple-50 text-purple-600'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
+                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              )}
             >
               <span className="mr-2">{item.icon}</span>
               {item.label}

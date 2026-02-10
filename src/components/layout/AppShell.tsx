@@ -8,7 +8,7 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       <Topbar />
       <div className="flex">
         <Sidebar />
@@ -18,6 +18,6 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </main>
       </div>
-    </div>
+    </>
   );
 }

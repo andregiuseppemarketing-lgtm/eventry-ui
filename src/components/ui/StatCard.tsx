@@ -1,4 +1,6 @@
 import { ReactNode } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 interface StatCardProps {
   title: string;
@@ -11,29 +13,25 @@ interface StatCardProps {
 
 export function StatCard({ title, value, subtitle, icon, trend, className = '' }: StatCardProps) {
   const trendColors = {
-    up: 'text-green-600',
-    down: 'text-red-600',
-    neutral: 'text-gray-600'
+    up: 'text-green-500',
+    down: 'text-red-500',
+    neutral: 'text-muted-foreground'
   };
 
   return (
-    <div className={`bg-white rounded-xl border border-gray-200 p-6 ${className}`}>
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="text-sm text-gray-600 font-medium">{title}</div>
-          <div className="text-3xl font-bold text-gray-900 mt-2">{value}</div>
-          {subtitle && (
-            <div className={`text-sm mt-2 ${trend ? trendColors[trend] : 'text-gray-600'}`}>
-              {subtitle}
-            </div>
-          )}
-        </div>
-        {icon && (
-          <div className="text-2xl text-gray-400">
-            {icon}
-          </div>
+    <Card className={cn('', className)}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+        {icon && <div className="text-muted-foreground">{icon}</div>}
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        {subtitle && (
+          <p className={cn('text-xs mt-1', trend ? trendColors[trend] : 'text-muted-foreground')}>
+            {subtitle}
+          </p>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

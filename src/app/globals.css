@@ -1,26 +1,214 @@
-@import "tailwindcss";
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Light mode base (kept for completeness) */
+    --background: 0 0% 100%;
+    --foreground: 220 15% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 14%;
+    --primary: 220 20% 12%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 10% 96%;
+    --secondary-foreground: 220 15% 14%;
+    --muted: 220 10% 96%;
+    --muted-foreground: 220 10% 55%;
+    --accent: 214 100% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 10% 92%;
+    --input: 220 10% 96%;
+    --ring: 214 100% 50%;
+    --radius: 12px;
+    --chart-1: 214 100% 55%;
+    --chart-2: 205 90% 55%;
+    --chart-3: 190 80% 55%;
+    --chart-4: 170 70% 55%;
+    --chart-5: 150 60% 55%;
+  }
+
+  .dark {
+    /* Dark mode: Stripe-inspired with neon accents */
+    --background: 240 10% 3.9%; /* #09090B - nero profondo */
+    --foreground: 0 0% 98%; /* #FAFAFA - bianco quasi puro */
+    --card: 240 10% 6%; /* #0F0F12 - card leggermente più chiara */
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 5%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 198 93% 60%; /* #06B6D4 - Cyan fluo */
+    --primary-foreground: 240 10% 3.9%;
+    --secondary: 240 5% 12%; /* #1A1A1D - grigio molto scuro */
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 5% 15%; /* #212127 */
+    --muted-foreground: 240 5% 65%; /* #9CA3AF - grigio medio */
+    --accent: 262 83% 58%; /* #A855F7 - Viola neon */
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 72% 51%; /* #DC2626 - rosso vibrante */
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5% 16%; /* #27272A - bordi sottili */
+    --input: 240 5% 12%;
+    --ring: 198 93% 60%; /* cyan ring per focus */
+    --radius: 12px;
+    --chart-1: 198 93% 60%; /* cyan */
+    --chart-2: 262 83% 58%; /* violet */
+    --chart-3: 217 91% 60%; /* blue */
+    --chart-4: 142 76% 36%; /* green */
+    --chart-5: 47 96% 53%; /* yellow */
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-feature-settings: "kern" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Gradienti di sfondo animati */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background: 
+      radial-gradient(circle at 20% 50%, hsl(var(--primary) / 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, hsl(var(--accent) / 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 40% 20%, hsl(217 91% 60% / 0.1) 0%, transparent 50%);
+    animation: gradient-shift 15s ease infinite;
+  }
+
+  @keyframes gradient-shift {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
+
+  /* Smooth scroll */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Selection con colore accent */
+  ::selection {
+    background-color: hsl(var(--primary) / 0.3);
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer components {
+  /* Buttons: Stripe-like con glow neon */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.3), 0 4px 6px -1px rgb(0 0 0 / 0.3);
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.5), 0 10px 15px -3px rgb(0 0 0 / 0.4);
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    background: transparent;
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+    transition: all 200ms ease;
+  }
+
+  .btn-ghost:hover {
+    background: hsl(var(--card));
+    border-color: hsl(var(--accent) / 0.5);
+    box-shadow: 0 0 15px hsl(var(--accent) / 0.2);
+  }
+
+  /* Cards con glassmorphism e bordi luminosi */
+  .card {
+    background: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(12px);
+    color: hsl(var(--card-foreground));
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 0 1px hsl(var(--border) / 0.1) inset;
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card:hover {
+    border-color: hsl(var(--accent) / 0.3);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5),
+                0 0 20px hsl(var(--accent) / 0.15);
+    transform: translateY(-2px);
+  }
+
+  /* Inputs con focus glow */
+  .input {
+    width: 100%;
+    padding: 0.625rem 1rem;
+    border-radius: 0.5rem;
+    background: hsl(var(--input) / 0.5);
+    backdrop-filter: blur(8px);
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground));
+    transition: all 200ms ease;
+  }
+
+  .input:focus {
+    outline: none;
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15),
+                0 0 20px hsl(var(--primary) / 0.2);
+  }
+
+  /* Utilities */
+  .muted { 
+    color: hsl(var(--muted-foreground)); 
+  }
+  
+  .leading-tight { 
+    line-height: 1.25; 
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glass {
+    background: hsl(var(--card) / 0.4);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
 }

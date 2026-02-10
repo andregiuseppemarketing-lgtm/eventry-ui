@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { mockEvents } from '@/data/mock-events';
-import { Card, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export default function EventsPage() {
   return (
@@ -11,7 +11,7 @@ export default function EventsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Eventi</h1>
           <p className="text-gray-600 mt-2">Gestisci tutti i tuoi eventi</p>
         </div>
-        <Button variant="primary">
+        <Button>
           + Nuovo Evento
         </Button>
       </div>

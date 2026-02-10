@@ -1,6 +1,6 @@
 import { mockAnalyticsData } from '@/data/mock-analytics';
 import { StatCard } from '@/components/ui/StatCard';
-import { Card, CardHeader, CardContent } from '@/components/ui/Card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 
 export default function AnalyticsPage() {
   return (
