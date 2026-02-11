@@ -1,0 +1,971 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_URL")
+  directUrl = env("POSTGRES_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id                    String                 @id @default(cuid())
+  name                  String?
+  email                 String                 @unique
+  emailVerified         DateTime?
+  image                 String?
+  passwordHash          String?
+  role                  UserRole               @default(USER)
+  phone                 String?
+  birthDate             DateTime?
+  age                   Int?
+  ageConsent            Boolean                @default(false)
+  identityVerified      Boolean                @default(false)
+  identityVerifiedAt    DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  ageVerified           Boolean                @default(false)
+  displayName           String?
+  firstName             String?
+  lastName              String?
+  middleName            String?
+  username              String?                @unique
+  resetToken            String?
+  resetTokenExpiry      DateTime?
+  accounts              Account[]
+  sessions              Session[]
+  artistProfile         ArtistProfile?
+  auditLogs             AuditLog[]
+  checkins              CheckIn[]
+  clubsOwned            Club[]                 @relation("ClubOwner")
+  eventsCreated         Event[]                @relation("EventCreator")
+  feedComments          FeedComment[]
+  feedItems             FeedItem[]             @relation("FeedItemAuthor")
+  feedLikes             FeedLike[]
+  reviewedVerifications IdentityVerification[] @relation("VerificationReviewer")
+  identityVerifications IdentityVerification[]
+  inviteLinks           InviteLink[]
+  listEntries           ListEntry[]            @relation("ListEntryCreator")
+  onboardingProgress    OnboardingProgress?
+  organizationProfile   OrganizationProfile?
+  prProfile             PRProfile?
+  securityReports       SecurityNote[]
+  ticketsIssued         Ticket[]               @relation("TicketIssuer")
+  ticketsOwned          Ticket[]               @relation("TicketOwner")
+  consents              UserConsent?
+  following             UserFollow[]           @relation("Follower")
+  followedBy            UserFollow[]           @relation("Following")
+  phoneVerification     UserPhone?
+  userProfile           UserProfile?
+  userStats             UserStats?
+  analyticsLogs         AnalyticsLog[]
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Club {
+  id           String   @id @default(cuid())
+  name         String
+  type         ClubType
+  description  String?
+  logo         String?
+  coverImage   String?
+  gallery      String[] @default([])
+  website      String?
+  phone        String?
+  email        String?
+  instagram    String?
+  facebook     String?
+  openingHours String?
+  priceRange   String?
+  amenities    String[] @default([])
+  musicGenres  String[] @default([])
+  ownerId      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  owner        User     @relation("ClubOwner", fields: [ownerId], references: [id])
+  venues       Venue[]
+
+  @@map("clubs")
+}
+
+model Venue {
+  id             String   @id @default(cuid())
+  name           String
+  address        String
+  city           String
+  capacity       Int?
+  clubId         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  slug           String?  @unique
+  telegramHandle String?
+  whatsappNumber String?
+  events         Event[]
+  club           Club?    @relation(fields: [clubId], references: [id])
+
+  @@map("venues")
+}
+
+model Event {
+  id              String           @id @default(cuid())
+  title           String
+  description     String?
+  coverUrl        String?
+  dateStart       DateTime
+  dateEnd         DateTime?
+  status          EventStatus      @default(DRAFT)
+  minAge          Int?
+  dressCode       String?
+  ticketType      TicketType       @default(FREE_LIST)
+  ticketPrice     Float?
+  maxGuests       Int?             @default(0)
+  venueId         String
+  createdByUserId String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  assignments     Assignment[]
+  consumptions    Consumption[]
+  feedbacks       EventFeedback[]
+  createdBy       User             @relation("EventCreator", fields: [createdByUserId], references: [id])
+  venue           Venue            @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  funnelTracking  FunnelTracking[]
+  inviteLinks     InviteLink[]
+  lists           List[]
+  securityNotes   SecurityNote[]
+  tickets         Ticket[]
+  eventStats      EventStats[]
+
+  @@index([status, dateStart])
+  @@index([venueId])
+  @@map("events")
+}
+
+model PRProfile {
+  id           String       @id @default(cuid())
+  userId       String       @unique
+  displayName  String?
+  referralCode String       @unique
+  phone        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  assignments  Assignment[]
+  inviteLinks  InviteLink[]
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([referralCode])
+  @@map("pr_profiles")
+}
+
+model Assignment {
+  id          String    @id @default(cuid())
+  eventId     String
+  prProfileId String
+  quotaTotal  Int?
+  quotaFemale Int?
+  quotaMale   Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  event       Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  prProfile   PRProfile @relation(fields: [prProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, prProfileId])
+  @@map("assignments")
+}
+
+model List {
+  id          String      @id @default(cuid())
+  eventId     String
+  name        String
+  type        ListType
+  quotaTotal  Int?
+  quotaFemale Int?
+  quotaMale   Int?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  entries     ListEntry[]
+  event       Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, type])
+  @@map("lists")
+}
+
+model Guest {
+  id                 String               @id @default(cuid())
+  firstName          String
+  lastName           String
+  phone              String?
+  email              String?
+  nickname           String?
+  birthDate          DateTime?
+  city               String?
+  occupation         String?
+  instagram          String?
+  telegramChatId     String?
+  whatsappPhone      String?
+  totalEvents        Int                  @default(0)
+  lastEventDate      DateTime?
+  customerSegment    CustomerSegment      @default(NEW)
+  preferredDays      String?
+  averageArrivalTime String?
+  prefersTable       Boolean              @default(false)
+  averageGroupSize   Int                  @default(1)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  preferences        CustomerPreferences?
+  feedbacks          EventFeedback[]
+  listEntries        ListEntry[]
+  securityNotes      SecurityNote[]
+  tickets            Ticket[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([instagram])
+  @@index([customerSegment])
+  @@index([telegramChatId])
+  @@map("guests")
+}
+
+model ListEntry {
+  id             String        @id @default(cuid())
+  listId         String
+  guestId        String?
+  addedByUserId  String
+  firstName      String
+  lastName       String
+  phone          String?
+  email          String?
+  gender         Gender        @default(UNK)
+  note           String?
+  createdVia     CreatedVia    @default(MANUAL)
+  status         EntryStatus   @default(PENDING)
+  plusOne        Boolean       @default(false)
+  bookingMethod  BookingMethod @default(MANUAL)
+  referralSource String?
+  groupSize      Int           @default(1)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  addedBy        User          @relation("ListEntryCreator", fields: [addedByUserId], references: [id])
+  guest          Guest?        @relation(fields: [guestId], references: [id])
+  list           List          @relation(fields: [listId], references: [id], onDelete: Cascade)
+  tickets        Ticket[]
+
+  @@index([listId, status])
+  @@index([email])
+  @@index([phone])
+  @@index([bookingMethod])
+  @@map("list_entries")
+}
+
+model Ticket {
+  id                String          @id @default(cuid())
+  eventId           String
+  userId            String?
+  guestId           String?
+  listEntryId       String?
+  issuedByUserId    String?
+  type              TicketType      @default(FREE_LIST)
+  price             Float?
+  currency          String?         @default("EUR")
+  code              String          @unique
+  qrData            String
+  status            TicketStatus    @default(NEW)
+  paid              Boolean         @default(false)
+  paymentIntentId   String?
+  paymentStatus     PaymentStatus   @default(PENDING)
+  receiptUrl        String?
+  issuedAt          DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  checkins          CheckIn[]
+  consumptions      Consumption[]
+  feedbacks         EventFeedback[]
+  securityNotes     SecurityNote[]
+  event             Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  guest             Guest?          @relation(fields: [guestId], references: [id])
+  issuedBy          User?           @relation("TicketIssuer", fields: [issuedByUserId], references: [id])
+  listEntry         ListEntry?      @relation(fields: [listEntryId], references: [id])
+  user              User?           @relation("TicketOwner", fields: [userId], references: [id])
+
+  @@index([code])
+  @@index([eventId, status])
+  @@index([userId])
+  @@index([guestId])
+  @@map("tickets")
+}
+
+model CheckIn {
+  id              String   @id @default(cuid())
+  ticketId        String
+  scannedByUserId String
+  scannedAt       DateTime @default(now())
+  gate            Gate     @default(MAIN)
+  ok              Boolean  @default(true)
+  notes           String?
+  arrivalTime     String?
+  groupSize       Int      @default(1)
+  scannedBy       User     @relation(fields: [scannedByUserId], references: [id])
+  ticket          Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([scannedAt])
+  @@index([gate])
+  @@map("checkins")
+}
+
+model InviteLink {
+  id              String     @id @default(cuid())
+  createdByUserId String
+  eventId         String
+  prProfileId     String?
+  slug            String     @unique
+  maxUses         Int?
+  uses            Int        @default(0)
+  expiresAt       DateTime?
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  createdBy       User       @relation(fields: [createdByUserId], references: [id])
+  event           Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  prProfile       PRProfile? @relation(fields: [prProfileId], references: [id])
+
+  @@index([slug])
+  @@index([eventId])
+  @@map("invite_links")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  entity    String
+  entityId  String
+  details   Json?
+  timestamp DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+model EmailLog {
+  id          String   @id @default(cuid())
+  recipient   String
+  subject     String
+  type        String   // reset_password, ticket_confirmation, etc
+  status      String   // sent, failed
+  error       String?
+  sentAt      DateTime @default(now())
+  resendId    String?  // ID from Resend API
+
+  @@index([recipient])
+  @@index([type])
+  @@index([status])
+  @@index([sentAt])
+  @@map("email_logs")
+}
+
+model Consumption {
+  id        String   @id @default(cuid())
+  ticketId  String
+  eventId   String
+  amount    Float
+  category  String
+  items     Json?
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([eventId])
+  @@index([createdAt])
+  @@map("consumptions")
+}
+
+model FunnelTracking {
+  id         String   @id @default(cuid())
+  sessionId  String
+  guestEmail String?
+  guestPhone String?
+  eventId    String
+  step       String
+  metadata   Json?
+  userAgent  String?
+  ipAddress  String?
+  referer    String?
+  timestamp  DateTime @default(now())
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([eventId])
+  @@index([step])
+  @@index([timestamp])
+  @@map("funnel_tracking")
+}
+
+model EventFeedback {
+  id            String   @id @default(cuid())
+  eventId       String
+  ticketId      String?
+  guestId       String?
+  overallRating Int
+  musicRating   Int?
+  serviceRating Int?
+  venueRating   Int?
+  comment       String?
+  wouldReturn   Boolean?
+  interests     Json?
+  createdAt     DateTime @default(now())
+  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  guest         Guest?   @relation(fields: [guestId], references: [id])
+  ticket        Ticket?  @relation(fields: [ticketId], references: [id])
+
+  @@index([eventId])
+  @@index([guestId])
+  @@index([overallRating])
+  @@map("event_feedbacks")
+}
+
+model SecurityNote {
+  id               String   @id @default(cuid())
+  guestId          String?
+  eventId          String?
+  ticketId         String?
+  severity         String
+  type             String
+  description      String
+  reportedByUserId String
+  actionTaken      String?
+  createdAt        DateTime @default(now())
+  event            Event?   @relation(fields: [eventId], references: [id])
+  guest            Guest?   @relation(fields: [guestId], references: [id])
+  reportedBy       User     @relation(fields: [reportedByUserId], references: [id])
+  ticket           Ticket?  @relation(fields: [ticketId], references: [id])
+
+  @@index([guestId])
+  @@index([severity])
+  @@index([eventId])
+  @@map("security_notes")
+}
+
+model CustomerPreferences {
+  id               String   @id @default(cuid())
+  guestId          String   @unique
+  musicGenres      Json?
+  dressStyle       String?
+  drinkPreferences Json?
+  avgSpending      Float?
+  responseToPromo  String?
+  socialEngagement String?
+  conversionScore  Float?
+  lifetimeValue    Float?
+  consents         Json?
+  updatedAt        DateTime @updatedAt
+  guest            Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@map("customer_preferences")
+}
+
+model OrganizationProfile {
+  id               String               @id @default(cuid())
+  userId           String               @unique
+  organizationName String
+  bio              String?
+  website          String?
+  instagram        String?
+  facebook         String?
+  twitter          String?
+  logo             String?
+  coverImage       String?
+  verified         Boolean              @default(false)
+  totalEvents      Int                  @default(0)
+  totalAttendees   Int                  @default(0)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  slug             String?              @unique
+  telegramHandle   String?
+  whatsappNumber   String?
+  teamMembers      OrganizationMember[]
+  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([verified])
+  @@map("organization_profiles")
+}
+
+model OrganizationMember {
+  id             String              @id @default(cuid())
+  organizationId String
+  name           String
+  role           String
+  email          String?
+  phone          String?
+  avatar         String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  organization   OrganizationProfile @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("organization_members")
+}
+
+model ArtistProfile {
+  id           String        @id @default(cuid())
+  userId       String        @unique
+  artistName   String
+  artistType   ArtistType
+  bio          String?
+  genres       String[]      @default([])
+  website      String?
+  instagram    String?
+  facebook     String?
+  twitter      String?
+  soundcloud   String?
+  spotify      String?
+  youtube      String?
+  avatar       String?
+  coverImage   String?
+  verified     Boolean       @default(false)
+  totalGigs    Int           @default(0)
+  rating       Float?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  mediaGallery ArtistMedia[]
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  performances Performance[]
+
+  @@index([artistType])
+  @@index([verified])
+  @@map("artist_profiles")
+}
+
+model Performance {
+  id          String        @id @default(cuid())
+  artistId    String
+  eventId     String?
+  eventName   String
+  eventDate   DateTime
+  venueName   String
+  city        String?
+  description String?
+  fee         Float?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  artist      ArtistProfile @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@index([artistId])
+  @@index([eventDate])
+  @@map("performances")
+}
+
+model ArtistMedia {
+  id           String        @id @default(cuid())
+  artistId     String
+  type         MediaType
+  title        String?
+  description  String?
+  url          String
+  thumbnailUrl String?
+  order        Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  artist       ArtistProfile @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@index([artistId])
+  @@map("artist_media")
+}
+
+model UserProfile {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  bio             String?
+  avatar          String?
+  coverImage      String?
+  city            String?
+  birthDate       DateTime?
+  gender          Gender?
+  interests       String[]  @default([])
+  favoriteGenres  String[]  @default([])
+  preferredVenues String[]  @default([])
+  isPublic        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  followersCount  Int       @default(0)
+  followingCount  Int       @default(0)
+  postsCount      Int       @default(0)
+  spotifyUrl      String?
+  tiktokHandle    String?
+  instagram       String?
+  verifiedBadge   Boolean   @default(false)
+  slug            String?   @unique
+  telegramHandle  String?
+  whatsappNumber  String?
+  provincia       String?
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+model UserFollow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower    User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("user_follows")
+}
+
+model FeedItem {
+  id            String        @id @default(cuid())
+  authorId      String
+  type          FeedItemType
+  content       String?
+  imageUrl      String?
+  videoUrl      String?
+  eventId       String?
+  visibility    Visibility    @default(PUBLIC)
+  likesCount    Int           @default(0)
+  commentsCount Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  comments      FeedComment[]
+  author        User          @relation("FeedItemAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  likes         FeedLike[]
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([type])
+  @@map("feed_items")
+}
+
+model FeedLike {
+  id         String   @id @default(cuid())
+  feedItemId String
+  userId     String
+  createdAt  DateTime @default(now())
+  feedItem   FeedItem @relation(fields: [feedItemId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([feedItemId, userId])
+  @@index([feedItemId])
+  @@index([userId])
+  @@map("feed_likes")
+}
+
+model FeedComment {
+  id         String   @id @default(cuid())
+  feedItemId String
+  userId     String
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  feedItem   FeedItem @relation(fields: [feedItemId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([feedItemId])
+  @@index([userId])
+  @@map("feed_comments")
+}
+
+model IdentityVerification {
+  id               String             @id @default(cuid())
+  userId           String
+  documentType     DocumentType
+  documentNumber   String?
+  documentFrontUrl String
+  documentBackUrl  String?
+  selfieUrl        String
+  status           VerificationStatus @default(PENDING)
+  reviewedBy       String?
+  reviewedAt       DateTime?
+  rejectionReason  String?
+  expiresAt        DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  reviewer         User?              @relation("VerificationReviewer", fields: [reviewedBy], references: [id])
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("identity_verifications")
+}
+
+model UserPhone {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  phoneNumber     String    @unique
+  phoneVerified   Boolean   @default(false)
+  phoneVerifiedAt DateTime?
+  otpCode         String?
+  otpExpiresAt    DateTime?
+  otpAttempts     Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([phoneNumber])
+  @@index([userId])
+  @@map("user_phones")
+}
+
+model UserConsent {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  termsAccepted     Boolean   @default(false)
+  termsAcceptedAt   DateTime?
+  privacyAccepted   Boolean   @default(false)
+  privacyAcceptedAt DateTime?
+  marketingOptIn    Boolean   @default(false)
+  marketingOptInAt  DateTime?
+  newsletterOptIn   Boolean   @default(false)
+  newsletterOptInAt DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_consents")
+}
+
+model OnboardingProgress {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  currentStep        Int       @default(1)
+  step1Completed     Boolean   @default(false)
+  step2Completed     Boolean   @default(false)
+  step3Completed     Boolean   @default(false)
+  onboardingComplete Boolean   @default(false)
+  completedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([onboardingComplete])
+  @@map("onboarding_progress")
+}
+
+enum ClubType {
+  DISCOTECA
+  PUB
+  LIDO
+  ALTRO
+}
+
+enum UserRole {
+  ADMIN
+  ORGANIZER
+  DJ
+  VOCALIST
+  ARTIST
+  PR
+  STAFF
+  USER
+  SECURITY
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  CLOSED
+}
+
+enum Gender {
+  F
+  M
+  NB
+  UNK
+}
+
+enum ListType {
+  PR
+  GUEST
+  STAFF
+}
+
+enum CreatedVia {
+  MANUAL
+  IMPORT
+  LINK
+}
+
+enum EntryStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+}
+
+enum TicketType {
+  FREE          // Legacy
+  LIST          // Legacy
+  PAID          // Legacy
+  FREE_LIST     // Evento gratuito (solo lista)
+  DOOR_ONLY     // Pagamento al botteghino
+  PRE_SALE      // Prevendita online
+  FULL_TICKET   // Biglietto intero online
+}
+
+enum TicketStatus {
+  NEW
+  PENDING
+  PAID
+  USED
+  CHECKED_IN
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum Gate {
+  MAIN
+  VIP
+  STAFF
+}
+
+enum BookingMethod {
+  INSTAGRAM
+  WHATSAPP
+  WEBSITE
+  APP
+  PHONE
+  MANUAL
+}
+
+enum CustomerSegment {
+  NEW
+  OCCASIONAL
+  REGULAR
+  VIP
+  DORMANT
+}
+
+enum ArtistType {
+  DJ
+  VOCALIST
+  PRODUCER
+  LIVE_BAND
+  OTHER
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  AUDIO
+  LINK
+}
+
+enum FeedItemType {
+  POST
+  EVENT_ANNOUNCEMENT
+  PHOTO
+  VIDEO
+  CHECK_IN
+}
+
+enum Visibility {
+  PUBLIC
+  FOLLOWERS_ONLY
+  PRIVATE
+}
+
+enum DocumentType {
+  ID_CARD
+  PASSPORT
+  DRIVER_LICENSE
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+// MILESTONE 6: Analytics & Stats Models
+model EventStats {
+  id           String   @id @default(cuid())
+  eventId      String
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticketsSold  Int      @default(0)
+  revenueTotal Float    @default(0)
+  checkIns     Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([eventId])
+  @@map("event_stats")
+}
+
+model UserStats {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventsCreated Int      @default(0)
+  ticketsBought Int      @default(0)
+  totalSpent    Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("user_stats")
+}
+
+model AnalyticsLog {
+  id         String   @id @default(cuid())
+  actionType String
+  targetId   String?
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  @@index([actionType, createdAt])
+  @@index([userId])
+  @@map("analytics_logs")
+}

@@ -1,0 +1,253 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import type { Route } from 'next';
+import { Checkbox } from '@/components/ui/checkbox';
+import { BirthDatePicker } from '@/components/auth/birth-date-picker';
+import { useToast } from '@/hooks/use-toast';
+import { PROVINCE_ITALIANE } from '@/lib/province-italiane';
+
+export default function OnboardingStep2Page() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const { toast } = useToast();
+  
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    provincia: '',
+    city: '',
+    gender: 'UNK' as 'M' | 'F' | 'NB' | 'UNK',
+    marketingOptIn: false,
+  });
+  
+  const [birthDate, setBirthDate] = useState<Date | undefined>(undefined);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login' as Route);
+    }
+  }, [status, router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.firstName || !formData.lastName) {
+      toast({
+        title: 'Campi mancanti',
+        description: 'Nome e cognome sono obbligatori',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!birthDate) {
+      toast({
+        title: 'Data di nascita mancante',
+        description: 'Inserisci la tua data di nascita per continuare',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    const dayDiff = today.getDate() - birthDate.getDate();
+    const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+
+    if (actualAge < 18) {
+      toast({
+        title: 'Età non valida',
+        description: 'Devi avere almeno 18 anni per registrarti',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/onboarding/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          birthDate: birthDate.toISOString(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Errore durante aggiornamento del profilo');
+      }
+
+      console.log('[Step 2] API Response:', data);
+
+      toast({
+        title: 'Profilo completato!',
+        description: data.data?.message || 'Ora scegli il tuo username',
+      });
+
+      const nextStep = (data.data?.nextStep as Route | undefined) || '/onboarding/step-3';
+      console.log('[Step 2] Redirecting to:', nextStep);
+      router.push(nextStep);
+    } catch (error) {
+      toast({
+        title: 'Errore',
+        description: error instanceof Error ? error.message : 'Errore sconosciuto',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (status === 'loading' || status === 'unauthenticated') {
+    return null;
+  }
+
+  return (
+    <div className="relative min-h-screen bg-background text-foreground overflow-hidden">
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
+
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-6 py-16">
+        <div className="w-full max-w-md">
+          <div className="mb-10 text-center space-y-6">
+            <div>
+              <h1 className="text-5xl font-bold tracking-tight gradient-text">EVENTRY</h1>
+              <p className="mt-3 text-muted-foreground">Completa il tuo profilo</p>
+            </div>
+          </div>
+
+          <div className="flex gap-2 mb-8">
+            <div className="h-1 flex-1 bg-primary rounded-full" />
+            <div className="h-1 flex-1 bg-primary rounded-full" />
+            <div className="h-1 flex-1 bg-border rounded-full" />
+          </div>
+
+          <div className="group relative rounded-2xl glass border border-border p-8 shadow-[0_20px_60px_rgba(0,0,0,0.4)] hover:shadow-[0_20px_80px_rgba(0,0,0,0.5)] transition-all duration-500">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/20 via-transparent to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+            
+            <div className="relative">
+              <h2 className="text-2xl font-semibold tracking-tight">Informazioni base</h2>
+              <p className="mt-2 text-sm text-muted-foreground">Step 2 di 3</p>
+
+              <form onSubmit={handleSubmit} className="space-y-5 mt-8">
+                <div className="space-y-2">
+                  <label htmlFor="firstName" className="text-sm font-medium text-foreground">Nome *</label>
+                  <input
+                    id="firstName"
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    required
+                    placeholder="Mario"
+                    className="w-full rounded-lg border border-border bg-card/50 backdrop-blur-sm px-4 py-3 text-foreground placeholder:text-muted-foreground transition-all duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="lastName" className="text-sm font-medium text-foreground">Cognome *</label>
+                  <input
+                    id="lastName"
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    required
+                    placeholder="Rossi"
+                    className="w-full rounded-lg border border-border bg-card/50 backdrop-blur-sm px-4 py-3 text-foreground placeholder:text-muted-foreground transition-all duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="birthDate" className="text-sm font-medium text-foreground">Data di nascita *</label>
+                  <BirthDatePicker value={birthDate} onChange={setBirthDate} />
+                  <p className="text-xs text-muted-foreground">Devi avere almeno 18 anni per registrarti</p>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="provincia" className="text-sm font-medium text-foreground">Provincia</label>
+                  <select
+                    id="provincia"
+                    value={formData.provincia}
+                    onChange={(e) => setFormData({ ...formData, provincia: e.target.value })}
+                    className="w-full rounded-lg border border-border bg-card/50 backdrop-blur-sm px-4 py-3 text-foreground transition-all duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  >
+                    <option value="">Seleziona provincia</option>
+                    {PROVINCE_ITALIANE.map((prov) => (
+                      <option key={prov.sigla} value={prov.sigla}>{prov.nome} ({prov.sigla})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="city" className="text-sm font-medium text-foreground">Città</label>
+                  <input
+                    id="city"
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    placeholder="Milano"
+                    className="w-full rounded-lg border border-border bg-card/50 backdrop-blur-sm px-4 py-3 text-foreground placeholder:text-muted-foreground transition-all duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="gender" className="text-sm font-medium text-foreground">Genere</label>
+                  <select
+                    id="gender"
+                    value={formData.gender}
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'M' | 'F' | 'NB' | 'UNK' })}
+                    className="w-full rounded-lg border border-border bg-card/50 backdrop-blur-sm px-4 py-3 text-foreground transition-all duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  >
+                    <option value="UNK">Preferisco non dirlo</option>
+                    <option value="M">Maschile</option>
+                    <option value="F">Femminile</option>
+                    <option value="NB">Non binario</option>
+                  </select>
+                </div>
+
+                <div className="flex items-start space-x-3 rounded-lg border border-border bg-card/50 p-4">
+                  <Checkbox
+                    id="marketingOptIn"
+                    checked={formData.marketingOptIn}
+                    onCheckedChange={(checked) => setFormData({ ...formData, marketingOptIn: checked as boolean })}
+                    className="mt-0.5"
+                  />
+                  <label htmlFor="marketingOptIn" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
+                    Voglio ricevere aggiornamenti su eventi e promozioni
+                  </label>
+                </div>
+
+                <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 p-4">
+                  <p className="text-sm text-blue-200">
+                    ℹ️ <strong>Prossimo step:</strong> Dopo questo, sceglierai il tuo username unico.
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="group relative w-full overflow-hidden rounded-lg bg-gradient-to-r from-primary to-accent py-3.5 text-base font-semibold text-primary-foreground transition-all duration-300 hover:shadow-[0_0_40px_hsl(var(--primary)/0.6)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                >
+                  <span className="relative z-10">{loading ? 'Salvataggio...' : 'Continua →'}</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-accent to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </button>
+              </form>
+
+              <p className="mt-6 text-center text-sm text-muted-foreground">I campi con * sono obbligatori</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

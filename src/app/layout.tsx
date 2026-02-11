@@ -1,33 +1,77 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Orbitron } from "next/font/google";
+import { Providers } from "@/components/providers";
+import { PerformanceMonitor } from "@/components/performance-monitor";
+import { IdentityVerificationStatusChecker } from "@/components/identity-verification-status-checker";
+import { cn } from "@/lib/utils";
+import CookieBanner from "@/components/cookie-banner";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+// Ottimizzazione font loading
+const inter = Inter({ 
+  subsets: ["latin"], 
+  variable: "--font-sans",
+  display: 'swap',
+  preload: true,
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const orbitron = Orbitron({ 
+  subsets: ["latin"], 
+  variable: "--font-display",
+  display: 'swap',
+  preload: true,
 });
 
 export const metadata: Metadata = {
-  title: "Eventry - Event Management Platform",
-  description: "Modern event management and ticketing platform",
+  title: "EVENTRY - Event Management System",
+  description: "Sistema completo di gestione eventi con check-in digitale e liste PR",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "EVENTRY",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en" className="dark">
+    <html lang="it" className="dark" suppressHydrationWarning>
+      <head>
+        {/* DNS Prefetch per domini esterni */}
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+        
+        {/* Preconnect per risorse critiche */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground antialiased`}
+        className={cn(
+          "min-h-screen bg-background font-sans text-foreground antialiased",
+          inter.variable,
+          orbitron.variable
+        )}
       >
-        {children}
+        <Providers>
+          <PerformanceMonitor />
+          <IdentityVerificationStatusChecker />
+          {children}
+          <CookieBanner />
+        </Providers>
       </body>
     </html>
   );
