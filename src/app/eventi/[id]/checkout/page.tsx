@@ -114,6 +114,12 @@ export default function CheckoutPage({ params }: CheckoutPageProps) {
 
         case 'PRE_SALE':
         case 'FULL_TICKET':
+          // Check if payments are enabled
+          const paymentsEnabled = process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === 'true';
+          if (!paymentsEnabled) {
+            throw new Error('Pagamenti online non ancora disponibili. Contatta l\'organizzatore.');
+          }
+          
           // Redirect a Stripe Checkout
           const stripeResponse = await fetch('/api/checkout/session', {
             method: 'POST',
@@ -398,14 +404,20 @@ export default function CheckoutPage({ params }: CheckoutPageProps) {
               <p className="text-sm text-yellow-600 mt-1">Pagamento all'ingresso</p>
             )}
             {(event?.ticketType === 'PRE_SALE' || event?.ticketType === 'FULL_TICKET') && (
-              <p className="text-sm text-muted-foreground mt-1">Pagamento online sicuro</p>
+              <>
+                {process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === 'true' ? (
+                  <p className="text-sm text-muted-foreground mt-1">Pagamento online sicuro</p>
+                ) : (
+                  <p className="text-sm text-yellow-600 mt-1">⚠️ Pagamenti online non ancora disponibili</p>
+                )}
+              </>
             )}
           </div>
 
           {/* Confirm Button */}
           <Button
             onClick={handleConfirmBooking}
-            disabled={creating}
+            disabled={creating || ((event?.ticketType === 'PRE_SALE' || event?.ticketType === 'FULL_TICKET') && process.env.NEXT_PUBLIC_PAYMENTS_ENABLED !== 'true')}
             className="w-full"
             size="lg"
           >
