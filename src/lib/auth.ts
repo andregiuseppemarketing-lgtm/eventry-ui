@@ -7,12 +7,17 @@ import '@/lib/env-check';
 
 // Secret hardcoded per Vercel (temporaneo)
 const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET || 'KW075njmAZlbgqWF7uvf26GOHVSbm4RKU2C+zGE3byY=';
+const NEXTAUTH_URL = process.env.NEXTAUTH_URL || process.env.VERCEL_URL 
+  ? `https://${process.env.VERCEL_URL}` 
+  : 'http://localhost:3000';
 
 export const authConfig: AuthOptions = {
   secret: NEXTAUTH_SECRET,
   session: {
     strategy: 'jwt',
   },
+  trustHost: true,
+  useSecureCookies: process.env.NODE_ENV === 'production',
   providers: [
     Credentials({
       name: 'credentials',
