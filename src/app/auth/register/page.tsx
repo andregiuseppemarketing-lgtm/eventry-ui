@@ -145,7 +145,7 @@ export default function RegisterPage() {
             </Link>
             
             <div>
-              <h1 className="text-5xl font-bold tracking-tight gradient-text">PANICO</h1>
+              <h1 className="text-5xl font-bold tracking-tight gradient-text">EVENTRY</h1>
               <p className="mt-3 text-muted-foreground">Crea il tuo account</p>
             </div>
           </div>

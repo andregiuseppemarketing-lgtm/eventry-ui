@@ -77,7 +77,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 function StatsCard({ title, value, icon: Icon, subtitle }: { 
   title: string; 
   value: number | string; 
-  icon: any; 
+  icon: React.ComponentType<{ className?: string }>; 
   subtitle?: string;
 }) {
   return (
@@ -157,7 +157,7 @@ function SituaPage() {
           <CardHeader>
             <CardTitle>Errore</CardTitle>
             <CardDescription>
-              Impossibile caricare le statistiche dell'evento
+              Impossibile caricare le statistiche dell&apos;evento
             </CardDescription>
           </CardHeader>
         </Card>
@@ -261,7 +261,9 @@ function SituaPage() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }: { name?: string; percent?: number }) => 
+                    `${name || ''} ${percent ? (percent * 100).toFixed(0) : '0'}%`
+                  }
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"

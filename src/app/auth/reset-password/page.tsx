@@ -137,7 +137,7 @@ function ResetPasswordForm() {
         <div className="relative z-10 flex min-h-screen items-center justify-center px-6 py-16">
           <div className="w-full max-w-md">
             <div className="text-center mb-8">
-              <h1 className="text-5xl font-bold tracking-tight gradient-text mb-4">PANICO</h1>
+              <h1 className="text-5xl font-bold tracking-tight gradient-text mb-4">EVENTRY</h1>
             </div>
 
             <div className="rounded-2xl glass border border-border p-8">
@@ -187,7 +187,7 @@ function ResetPasswordForm() {
           {/* Header */}
           <div className="mb-10 text-center space-y-6">
             <div>
-              <h1 className="text-5xl font-bold tracking-tight gradient-text">PANICO</h1>
+              <h1 className="text-5xl font-bold tracking-tight gradient-text">EVENTRY</h1>
               <p className="mt-3 text-muted-foreground">Reimposta la tua password</p>
             </div>
           </div>
