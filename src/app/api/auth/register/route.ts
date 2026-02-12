@@ -2,13 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { RegisterStepOneSchema } from '@/lib/validations';
+import { rateLimitOr429, getClientIp } from '@/lib/ratelimit';
 
 /**
  * POST /api/auth/register
  * Step 1: Email + Password + Consents
  * Creates user account and initiates onboarding process
+ * 
+ * Rate Limit: 5 registrations per hour per IP
  */
 export async function POST(req: NextRequest) {
+  // Rate limiting: 5 registrations per hour per IP
+  const ip = getClientIp(req);
+  const rateLimitResult = await rateLimitOr429(req, {
+    key: 'register',
+    identifier: ip,
+    limit: 5,
+    window: '1h',
+  });
+
+  if (!rateLimitResult.ok) {
+    return rateLimitResult.response;
+  }
+
   try {
     const body = await req.json();
     

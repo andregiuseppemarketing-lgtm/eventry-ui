@@ -1,13 +1,16 @@
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authConfig } from '@/lib/auth';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { rateLimitOr429, getClientIp } from '@/lib/ratelimit';
 
 /**
  * POST /api/follow
  * Follow un utente
+ * 
+ * Rate Limit: 120 follow/unfollow per hour per user
  */
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authConfig);
 
@@ -16,6 +19,18 @@ export async function POST(req: Request) {
         { error: 'Non autenticato' },
         { status: 401 }
       );
+    }
+
+    // Rate limiting: 120 follow/unfollow per hour per user
+    const rateLimitResult = await rateLimitOr429(req, {
+      key: 'follow',
+      identifier: session.user.id,
+      limit: 120,
+      window: '1h',
+    });
+
+    if (!rateLimitResult.ok) {
+      return rateLimitResult.response;
     }
 
     const { followingId } = await req.json();
