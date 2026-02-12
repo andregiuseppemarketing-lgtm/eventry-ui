@@ -2,7 +2,9 @@
 
 **Project**: eventry-ui (Next.js 16 App Router)  
 **Deployment**: Vercel (Production: www.eventry.app)  
-**Last Updated**: 11 February 2026  
+**Last Updated**: 12 February 2026  
+**Last Deployment**: Commit `3bbe874` (middleware rewrite)  
+**Build Status**: ✅ Passing (84 API routes, 50 pages, middleware active)  
 **Status**: Phase 7 Complete — Production Ready (Payments Deferred)
 
 ---
@@ -12,7 +14,7 @@
 EVENTRY is a comprehensive event management platform with social features, digital ticketing, identity verification, and analytics. The current codebase supports **95% of planned features**, with Stripe payment integration deferred to future phases.
 
 **Core Capabilities**:
-- ✅ Multi-role authentication (5 user roles)
+- ✅ Multi-role authentication (10 user roles: ADMIN, ORGANIZER, DJ, ARTIST, VOCALIST, PR, STAFF, USER, SECURITY)
 - ✅ Social networking (feed/follow system)
 - ✅ Identity verification (document upload & review)
 - ✅ Digital ticketing (QR codes + check-in scanner)
@@ -28,14 +30,14 @@ EVENTRY is a comprehensive event management platform with social features, digit
 ### Phase 1 — Foundation ✅ COMPLETE
 **Theme**: Core authentication & database architecture  
 **Status**: Deployed to production  
-**Evidence**: 12 files, 5 API routes, 6 pages
+**Evidence**: 5 API routes, 5 pages
 
 #### Acceptance Criteria
 - [x] User registration at `/auth/register`
 - [x] Email/password login at `/auth/login`
 - [x] Password reset flow (`/auth/forgot-password` → `/auth/reset-password`)
 - [x] NextAuth session management (JWT tokens)
-- [x] Role-based user types: `USER`, `ORGANIZER`, `PR`, `DJ`, `ADMIN`
+- [x] Role-based user types: `ADMIN`, `ORGANIZER`, `DJ`, `ARTIST`, `VOCALIST`, `PR`, `STAFF`, `USER`, `SECURITY`
 - [x] Prisma ORM + PostgreSQL database
 - [x] Deployed on Vercel with environment variables
 

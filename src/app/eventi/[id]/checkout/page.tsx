@@ -120,7 +120,10 @@ export default function CheckoutPage({ params }: CheckoutPageProps) {
             throw new Error('Pagamenti online non ancora disponibili. Contatta l\'organizzatore.');
           }
           
-          // Redirect a Stripe Checkout
+          // NOTE: This calls /api/checkout/session which does NOT exist yet.
+          // Endpoint will be created in Phase 8 (Stripe Integration).
+          // The feature flag above prevents this code from executing until then.
+          // When implementing Phase 8: create /api/checkout/session/route.ts
           const stripeResponse = await fetch('/api/checkout/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
