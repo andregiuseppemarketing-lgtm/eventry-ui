@@ -27,7 +27,7 @@
  * ```
  */
 
-import { Ratelimit } from '@upstash/ratelimit';
+import { Ratelimit, type Duration } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -53,15 +53,32 @@ function getRedis(): Redis | null {
 // Rate limiters cache
 const limiters = new Map<string, Ratelimit>();
 
+function normalizeWindowDuration(window: string): Duration {
+  const match = window.trim().toLowerCase().match(/^(\d+)\s*(ms|s|m|h|d)$/);
+  if (!match) {
+    throw new Error(`[RateLimit] Invalid window format: "${window}". Use values like "60 s" or "1 h".`);
+  }
+  const [, amount, unit] = match;
+  return `${amount} ${unit}` as Duration;
+}
+
 function getRateLimiter(limit: number, window: string): Ratelimit | null {
   const redisClient = getRedis();
   if (!redisClient) return null;
 
-  const key = `${limit}-${window}`;
+  let normalizedWindow: Duration;
+  try {
+    normalizedWindow = normalizeWindowDuration(window);
+  } catch (error) {
+    console.error('[RateLimit] Invalid window value:', error);
+    return null;
+  }
+
+  const key = `${limit}-${normalizedWindow}`;
   if (!limiters.has(key)) {
     limiters.set(key, new Ratelimit({
       redis: redisClient,
-      limiter: Ratelimit.slidingWindow(limit, window),
+      limiter: Ratelimit.slidingWindow(limit, normalizedWindow),
       analytics: true,
       prefix: 'eventry:ratelimit',
     }));
