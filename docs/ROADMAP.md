@@ -3,8 +3,8 @@
 **Project**: eventry-ui (Next.js 16 App Router)  
 **Deployment**: Vercel (Production: www.eventry.app)  
 **Last Updated**: 12 February 2026  
-**Last Deployment**: Commit `3bbe874` (middleware rewrite)  
-**Build Status**: ✅ Passing (84 API routes, 50 pages, middleware active)  
+**Last Deployment**: Commit `f817606` (milestone docs + roadmap corrections)  
+**Build Status**: ✅ Passing (84 API routes, 51 pages, 135 total routes, middleware active)  
 **Status**: Phase 7 Complete — Production Ready (Payments Deferred)
 
 ---

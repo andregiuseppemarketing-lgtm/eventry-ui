@@ -3,10 +3,13 @@ import { getServerSession } from 'next-auth';
 import { authConfig } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { TicketStatus } from '@prisma/client';
+import { rateLimitOr429, getClientIp } from '@/lib/ratelimit';
 
 /**
  * POST /api/tickets/checkin
  * Check-in di un ticket tramite QR code scan
+ * 
+ * Rate Limit: 60 check-ins per hour per user (scanner)
  */
 export async function POST(req: NextRequest) {
   try {
@@ -17,6 +20,18 @@ export async function POST(req: NextRequest) {
         { error: 'Non autenticato' },
         { status: 401 }
       );
+    }
+
+    // Rate limiting: 60 check-ins per hour per scanner user
+    const rateLimitResult = await rateLimitOr429(req, {
+      key: 'ticket-checkin',
+      identifier: session.user.id,
+      limit: 60,
+      window: '1h',
+    });
+
+    if (!rateLimitResult.ok) {
+      return rateLimitResult.response;
     }
 
     const { ticketCode, qrData } = await req.json();

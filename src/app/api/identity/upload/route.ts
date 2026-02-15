@@ -6,7 +6,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { createAuditLog } from '@/lib/api';
 import { getVerificationSubmittedTemplate } from '@/lib/identity-verification-emails';
-import { checkIdentityUploadLimit } from '@/lib/rate-limiter';
+import { rateLimitOr429 } from '@/lib/ratelimit';
 import { Resend } from 'resend';
 
 const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads', 'identity');
@@ -43,29 +43,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
     }
 
-    // Rate limiting check
-    const rateLimitResult = checkIdentityUploadLimit(session.user.id);
-    
-    if (!rateLimitResult.allowed) {
-      return NextResponse.json(
-        { 
-          error: rateLimitResult.message,
-          hourlyRemaining: rateLimitResult.hourlyRemaining,
-          dailyRemaining: rateLimitResult.dailyRemaining,
-          resetAt: rateLimitResult.resetAt,
-        },
-        { 
-          status: 429,
-          headers: {
-            'X-RateLimit-Limit-Hourly': '3',
-            'X-RateLimit-Limit-Daily': '10',
-            'X-RateLimit-Remaining-Hourly': rateLimitResult.hourlyRemaining.toString(),
-            'X-RateLimit-Remaining-Daily': rateLimitResult.dailyRemaining.toString(),
-            'X-RateLimit-Reset': new Date(rateLimitResult.resetAt).toISOString(),
-            'Retry-After': Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000).toString(),
-          }
-        }
-      );
+    // Rate limiting: 10 uploads per hour per user
+    const rateLimitResult = await rateLimitOr429(req, {
+      key: 'identity-upload',
+      identifier: session.user.id,
+      limit: 10,
+      window: '1h',
+    });
+
+    if (!rateLimitResult.ok) {
+      return rateLimitResult.response;
     }
 
     // Check if user already has a pending verification

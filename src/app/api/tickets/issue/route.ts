@@ -10,15 +10,30 @@ import {
 } from '@/lib/api';
 import { sendMessage, sendPhoto, MessageTemplates, getActiveProviders } from '@/lib/messaging';
 import QRCode from 'qrcode';
+import { rateLimitOr429, getClientIp } from '@/lib/ratelimit';
 
 /**
  * POST /api/tickets/issue
  * Issue a new ticket
  * Richiede: Identity verified per acquisto ticket
+ * 
+ * Rate Limit: 60 tickets per hour per user
  */
 export async function POST(req: NextRequest) {
   const { error: authError, user } = await requireAuth(['PR', 'ORGANIZER', 'ADMIN', 'STAFF']);
   if (authError) return authError;
+
+  // Rate limiting: 60 ticket issues per hour per user
+  const rateLimitResult = await rateLimitOr429(req, {
+    key: 'ticket-issue',
+    identifier: user!.id,
+    limit: 60,
+    window: '1h',
+  });
+
+  if (!rateLimitResult.ok) {
+    return rateLimitResult.response;
+  }
 
   try {
     const body = await req.json();
