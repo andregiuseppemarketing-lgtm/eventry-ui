@@ -120,10 +120,18 @@ export default function OnboardingStep3Page() {
         description: data.data?.message || 'Benvenuto su Panico! 🎉',
       });
 
-      // Redirect to user profile (onboarding complete)
-      const nextPage = (data.data?.nextStep as Route | undefined) || '/user/profilo';
-      console.log('[Step 3] Redirecting to:', nextPage);
-      router.push(nextPage);
+      // Wait a bit for DB transaction to commit
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Refresh router cache to invalidate old data
+      router.refresh();
+      
+      // Small delay after refresh
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Redirect with completed flag to bypass OnboardingGuard check
+      console.log('[Step 3] Redirecting to: /user/profilo?completed=true');
+      router.push('/user/profilo?completed=true' as Route);
     } catch (error) {
       toast({
         title: 'Errore',

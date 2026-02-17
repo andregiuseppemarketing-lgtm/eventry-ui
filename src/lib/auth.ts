@@ -2,7 +2,9 @@ import Credentials from 'next-auth/providers/credentials';
 import { compare } from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { LoginSchema } from '@/lib/validations';
-import type { AuthOptions } from 'next-auth';
+import type { AuthOptions, User } from 'next-auth';
+import type { JWT } from 'next-auth/jwt';
+import type { Session } from 'next-auth';
 import '@/lib/env-check';
 
 // Secret hardcoded per Vercel (temporaneo)
@@ -83,7 +85,7 @@ export const authConfig: AuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }: { token: any; user: any }) {
+    async jwt({ token, user }: { token: JWT; user: User | null }) {
       // Aggiungi info user al token solo al primo login
       if (user) {
         token.role = user.role;
@@ -118,7 +120,7 @@ export const authConfig: AuthOptions = {
       }
       return token;
     },
-    async session({ session, token }: { session: any; token: any }) {
+    async session({ session, token }: { session: Session; token: JWT }) {
       if (session.user) {
         session.user.id = token.sub!;
         session.user.role = token.role as string;

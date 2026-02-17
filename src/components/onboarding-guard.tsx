@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import type { Route } from 'next';
 
@@ -22,8 +22,12 @@ import type { Route } from 'next';
  */
 export function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const [isChecking, setIsChecking] = useState(true);
+  
+  // Check if we just completed onboarding (bypass check once)
+  const justCompleted = searchParams.get('completed') === 'true';
 
   useEffect(() => {
     const checkOnboarding = async () => {
@@ -35,11 +39,19 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
         router.push('/auth/login' as Route);
         return;
       }
+      
+      // If just completed onboarding, allow access without checking
+      if (justCompleted) {
+        console.log('[OnboardingGuard] Bypassing check - just completed onboarding');
+        setIsChecking(false);
+        return;
+      }
 
       if (status === 'authenticated' && session?.user?.id) {
         try {
-          // Check onboarding status via API
-          const res = await fetch('/api/onboarding/status');
+          // Check onboarding status via API (with cache-busting)
+          const timestamp = Date.now();
+          const res = await fetch(`/api/onboarding/status?t=${timestamp}`);
           
           if (!res.ok) {
             throw new Error('Failed to check onboarding status');
@@ -74,7 +86,7 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
     };
 
     checkOnboarding();
-  }, [status, session, router]);
+  }, [status, session, router, justCompleted]);
 
   // Show nothing while checking
   if (status === 'loading' || isChecking) {
