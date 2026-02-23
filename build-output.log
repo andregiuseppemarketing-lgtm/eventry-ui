@@ -1,0 +1,320 @@
+
+> eventry-ui@0.1.0 build
+> next build
+
+▲ Next.js 16.1.6 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 4.4s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+⚠ Using edge runtime on a page currently disables static generation for that page
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+❌ NEXTAUTH_SECRET non configurato!
+Configura questa variabile su Vercel:
+https://vercel.com/your-project/settings/environment-variables
+✅ Environment check:
+- NEXTAUTH_SECRET: ✗
+- NEXTAUTH_URL: default
+- DATABASE_URL: ✗
+- POSTGRES_URL: ✓
+- PAYMENTS_ENABLED: ✗ (payments disabled)
+  Generating static pages using 9 workers (0/87) ...
+  Generating static pages using 9 workers (21/87) 
+  Generating static pages using 9 workers (43/87) 
+  Generating static pages using 9 workers (65/87) 
+✓ Generating static pages using 9 workers (87/87) in 216.3ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /admin
+├ ƒ /admin/emails
+├ ƒ /admin/events
+├ ƒ /admin/system
+├ ƒ /admin/tickets
+├ ƒ /admin/users
+├ ƒ /analytics/[eventId]
+├ ○ /analytics/general
+├ ƒ /api/admin/emails
+├ ƒ /api/admin/emails/test
+├ ƒ /api/admin/events
+├ ƒ /api/admin/events/[eventId]/force-close
+├ ƒ /api/admin/events/[eventId]/status
+├ ƒ /api/admin/system/health
+├ ƒ /api/admin/tickets/[ticketId]/cancel
+├ ƒ /api/admin/tickets/[ticketId]/reset-checkin
+├ ƒ /api/admin/tickets/search
+├ ƒ /api/admin/trigger-marketing
+├ ƒ /api/admin/trigger-metrics
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[userId]
+├ ƒ /api/admin/users/[userId]/reset-password
+├ ƒ /api/admin/users/[userId]/role
+├ ƒ /api/analytics/log
+├ ƒ /api/analytics/performance
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/forgot-password
+├ ƒ /api/auth/register
+├ ƒ /api/auth/resend-verification
+├ ƒ /api/auth/reset-password
+├ ƒ /api/auth/validate-reset-token
+├ ƒ /api/auth/verify-email
+├ ƒ /api/check-in/scan
+├ ƒ /api/checkin/scan
+├ ƒ /api/clubs
+├ ƒ /api/clubs/[id]
+├ ƒ /api/consumptions
+├ ƒ /api/consumptions/[id]
+├ ƒ /api/cron/event-reminders
+├ ƒ /api/cron/marketing-automation
+├ ƒ /api/cron/update-metrics
+├ ƒ /api/dashboard/evento/[id]
+├ ƒ /api/dashboard/general
+├ ƒ /api/dashboard/stats
+├ ƒ /api/dashboard/stats/update
+├ ƒ /api/debug/env
+├ ƒ /api/debug/session
+├ ƒ /api/events
+├ ƒ /api/events/[id]
+├ ƒ /api/events/[id]/status
+├ ƒ /api/events/register
+├ ƒ /api/events/types
+├ ƒ /api/feed
+├ ƒ /api/follow
+├ ƒ /api/funnel/events/[id]
+├ ƒ /api/funnel/track
+├ ƒ /api/gdpr/consents
+├ ƒ /api/gdpr/delete-request
+├ ƒ /api/gdpr/export
+├ ƒ /api/guests
+├ ƒ /api/guests/[id]
+├ ƒ /api/guests/[id]/consumptions
+├ ƒ /api/identity/analytics
+├ ƒ /api/identity/batch-approve
+├ ƒ /api/identity/cleanup
+├ ƒ /api/identity/document/[filename]
+├ ƒ /api/identity/review
+├ ƒ /api/identity/upload
+├ ƒ /api/invites
+├ ƒ /api/lists/[id]/entries
+├ ƒ /api/lists/my
+├ ƒ /api/onboarding/profile
+├ ƒ /api/onboarding/status
+├ ƒ /api/onboarding/step-3
+├ ƒ /api/payments/[id]
+├ ƒ /api/phone/send-otp
+├ ƒ /api/phone/verify-otp
+├ ƒ /api/profile/slug
+├ ƒ /api/setup-admin
+├ ƒ /api/stats/dashboard
+├ ƒ /api/stats/event/[id]
+├ ƒ /api/telegram/webhook
+├ ƒ /api/tickets
+├ ƒ /api/tickets/[code]
+├ ƒ /api/tickets/check-status
+├ ƒ /api/tickets/checkin
+├ ƒ /api/tickets/issue
+├ ƒ /api/tickets/update-status
+├ ƒ /api/user/[slug]
+├ ƒ /api/user/check-username
+├ ƒ /api/user/profile
+├ ƒ /api/user/update
+├ ƒ /api/user/update-phone
+├ ƒ /api/venues
+├ ○ /auth/error
+├ ○ /auth/forgot-password
+├ ○ /auth/login
+├ ○ /auth/register
+├ ○ /auth/reset-password
+├ ○ /auth/verify-email
+├ ○ /auth/verify-email-sent
+├ ○ /biglietti
+├ ○ /checkin
+├ ○ /clienti
+├ ƒ /clienti/[id]
+├ ○ /clubs
+├ ƒ /clubs/[id]
+├ ○ /cookie-policy
+├ ○ /dashboard
+├ ƒ /dashboard/admin
+├ ○ /dashboard/analytics
+├ ○ /dashboard/checkin
+├ ○ /dashboard/marketing
+├ ○ /dashboard/profilo
+├ ○ /dashboard/settings
+├ ○ /dashboard/tickets
+├ ƒ /dashboard/verifica-identita
+├ ○ /dj/dashboard
+├ ƒ /eventi/[id]/checkout
+├ ƒ /eventi/[id]/consumazioni
+├ ○ /eventi/nuovo
+├ ○ /feed
+├ ○ /gdpr
+├ ƒ /icon
+├ ○ /lista
+├ ○ /manifest.webmanifest
+├ ○ /marketing/funnel
+├ ○ /onboarding/step-2
+├ ○ /onboarding/step-3
+├ ƒ /org/[slug]
+├ ○ /privacy-policy
+├ ○ /situa
+├ ○ /terms-of-service
+├ ○ /test
+├ ƒ /u/[slug]
+├ ○ /unauthorized
+├ ○ /user/profilo
+├ ƒ /venue/[slug]
+└ ƒ /verifica-identita
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

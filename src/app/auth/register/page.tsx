@@ -74,39 +74,12 @@ export default function RegisterPage() {
         return;
       }
 
-      console.log('[Register] User created successfully, attempting auto-login...');
+      console.log('[Register] User created successfully');
 
-      // STEP 2: login automatico con redirect MANUALE
-      // Usiamo redirect: false per controllare il risultato
-      const signInResult = await signIn('credentials', {
-        email: formData.email,
-        password: formData.password,
-        redirect: false,
-      });
-
-      console.log('[Register] SignIn result:', signInResult);
-
-      if (signInResult?.error) {
-        console.error('[Register] SignIn error:', signInResult.error);
-        setLoading(false);
-        setError('Errore durante il login automatico: ' + signInResult.error);
-        return;
-      }
-
-      if (!signInResult?.ok) {
-        console.error('[Register] SignIn not ok');
-        setLoading(false);
-        setError('Autenticazione fallita. Prova ad accedere manualmente dalla pagina di login.');
-        return;
-      }
-
-      console.log('[Register] SignIn successful, redirecting...');
-
-      // STEP 3: Redirect manuale con hard refresh per aggiornare la sessione
-      // Piccolo delay per dare tempo al cookie di essere settato
-      setTimeout(() => {
-        window.location.href = '/onboarding/step-2';
-      }, 100);
+      // ✅ NEW FLOW: Redirect to verify-email-sent page
+      // No auto-login until email is verified
+      const email = formData.email;
+      router.push(`/auth/verify-email-sent?email=${encodeURIComponent(email)}`);
 
     } catch (err: any) {
       console.error('[Register] Error:', err);

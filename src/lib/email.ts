@@ -451,3 +451,81 @@ export async function sendPasswordResetEmail(
     return { success: false, error: String(error) };
   }
 }
+
+/**
+ * Invia email di verifica account
+ */
+export async function sendEmailVerificationEmail(
+  email: string,
+  firstName: string,
+  verifyUrl: string
+): Promise<EmailResult> {
+  if (!resend) {
+    console.warn('[Email] Resend not configured');
+    return { success: false, error: 'Email service not configured' };
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'EVENTRY <noreply@eventry.app>',
+      to: email,
+      subject: '✅ EVENTRY - Verifica il tuo account',
+      html: `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f4f4f4;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+        <tr><td style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:40px 30px;text-align:center;">
+          <h1 style="margin:0;color:#fff;font-size:28px;">🎟️ EVENTRY</h1>
+        </td></tr>
+        <tr><td style="padding:40px 30px;">
+          <h2 style="margin:0 0 20px;color:#333;font-size:24px;">Ciao ${firstName || 'Utente'},</h2>
+          <p style="margin:0 0 20px;color:#666;font-size:16px;line-height:1.6;">
+            Grazie per esserti registrato su <strong>EVENTRY</strong>! 🎉
+          </p>
+          <p style="margin:0 0 20px;color:#666;font-size:16px;line-height:1.6;">
+            Per completare la registrazione e accedere alla piattaforma, verifica il tuo indirizzo email cliccando sul pulsante qui sotto:
+          </p>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td align="center" style="padding:0 0 30px;">
+              <a href="${verifyUrl}" style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-decoration:none;padding:15px 40px;border-radius:6px;font-size:16px;font-weight:600;">
+                Verifica Email
+              </a>
+            </td></tr>
+          </table>
+          <p style="margin:0 0 10px;color:#999;font-size:14px;">Oppure copia questo link nel browser:</p>
+          <p style="margin:0 0 30px;padding:15px;background:#f8f9fa;border-radius:4px;word-break:break-all;font-size:13px;color:#667eea;">
+            ${verifyUrl}
+          </p>
+          <div style="border-left:4px solid #fbbf24;padding-left:15px;margin:30px 0;">
+            <p style="margin:0;color:#b45309;font-size:14px;font-weight:600;">⚠️ Importante:</p>
+            <p style="margin:5px 0 0;color:#92400e;font-size:13px;">
+              Link valido per <strong>30 minuti</strong>. Se non hai richiesto la registrazione, ignora questa email.
+            </p>
+          </div>
+        </td></tr>
+        <tr><td style="background:#f8f9fa;padding:25px 30px;text-align:center;border-top:1px solid #e5e7eb;">
+          <p style="margin:0;color:#999;font-size:12px;">© ${new Date().getFullYear()} EVENTRY. Tutti i diritti riservati.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+      `,
+    });
+
+    if (error) {
+      console.error('[Email] Email verification error:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('[Email] Email verification sent to:', email);
+    return { success: true, messageId: data?.id };
+  } catch (error) {
+    console.error('[Email] Error:', error);
+    return { success: false, error: String(error) };
+  }
+}

@@ -57,6 +57,12 @@ export const authConfig: AuthOptions = {
             return null;
           }
 
+          // Check email verification
+          if (!user.emailVerified) {
+            console.log('[Auth] Email not verified for:', email);
+            return null;
+          }
+
           console.log('[Auth] Login successful for:', email);
           return {
             id: user.id,

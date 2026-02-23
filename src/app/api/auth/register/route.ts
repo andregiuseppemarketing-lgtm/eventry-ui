@@ -3,11 +3,13 @@ import { hash } from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { RegisterStepOneSchema } from '@/lib/validations';
 import { rateLimitOr429, getClientIp } from '@/lib/ratelimit';
+import crypto from 'crypto';
+import { sendEmailVerificationEmail } from '@/lib/email';
 
 /**
  * POST /api/auth/register
  * Step 1: Email + Password + Consents
- * Creates user account and initiates onboarding process
+ * Creates user account with emailVerified=null and sends verification email
  * 
  * Rate Limit: 5 registrations per hour per IP
  */
@@ -53,13 +55,24 @@ export async function POST(req: NextRequest) {
     
     const now = new Date();
 
-    // Create user + consents + onboarding progress in transaction
+    // Generate email verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(verificationToken)
+      .digest('hex');
+
+    // Token expires in 30 minutes
+    const tokenExpires = new Date(Date.now() + 30 * 60 * 1000);
+
+    // Create user + consents + onboarding progress + verification token in transaction
     const result = await prisma.$transaction(async (tx) => {
-      // Create user (minimal data - only email + password)
+      // Create user (emailVerified = null until verification)
       const user = await tx.user.create({
         data: {
           email,
           passwordHash,
+          emailVerified: null, // ✅ Null until email verified
           name: email.split('@')[0], // Temporary name until step 2
           role: 'USER', // Default role
           ageVerified: false, // Will verify in step 2 with birthDate
@@ -97,8 +110,34 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      // Create email verification token
+      await tx.emailVerificationToken.create({
+        data: {
+          userId: user.id,
+          token: tokenHash, // ✅ Store hashed token
+          expires: tokenExpires,
+        },
+      });
+
       return user;
     });
+
+    // Send verification email
+    const verifyUrl = `${process.env.NEXTAUTH_URL}/auth/verify-email?token=${verificationToken}`;
+    
+    await sendEmailVerificationEmail(
+      result.email,
+      result.email.split('@')[0],
+      verifyUrl
+    );
+
+    console.log('[Register] User created:', result.email);
+    console.log('[Register] Verification token sent via email');
+    console.log('[Register] Token expires at:', tokenExpires.toISOString());
+
+    console.log('[Register] User created:', result.email);
+    console.log('[Register] Verification token sent via email');
+    console.log('[Register] Token expires at:', tokenExpires.toISOString());
 
     return NextResponse.json(
       {
@@ -106,8 +145,8 @@ export async function POST(req: NextRequest) {
         data: {
           userId: result.id,
           email: result.email,
-          nextStep: 2,
-          message: 'Account creato con successo',
+          message: 'Account creato con successo! Controlla la tua email per verificare l\'account.',
+          verificationRequired: true,
         },
       },
       { status: 201 }
