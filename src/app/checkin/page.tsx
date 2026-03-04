@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Camera, CheckCircle2, XCircle, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Camera, CheckCircle2, XCircle, Loader2, AlertCircle, ArrowLeft, CreditCard } from 'lucide-react';
+import { TicketBadge, TicketBadgeType } from '@/components/ticket-badge';
 import dynamicImport from 'next/dynamic';
 
 // Import dinamico dello scanner QR per evitare errori SSR e accesso fotocamera
@@ -27,11 +28,17 @@ const Scanner = dynamicImport(
 
 type CheckInResult = {
   success: boolean;
+  requiresPayment?: boolean;
+  isComplimentary?: boolean;
   ticket?: {
     id: string;
     code: string;
     type: string;
     status: string;
+    price?: number;
+    currency?: string;
+    paid?: boolean;
+    isComplimentary?: boolean;
     listEntry?: {
       firstName: string;
       lastName: string;
@@ -42,13 +49,14 @@ type CheckInResult = {
     };
   };
   message: string;
+  error?: string;
 };
 
 async function performCheckIn(code: string, gate: string): Promise<CheckInResult> {
-  const res = await fetch('/api/check-in/scan', {
+  const res = await fetch('/api/tickets/checkin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code, gate }),
+    body: JSON.stringify({ ticketCode: code, gate }),
   });
 
   const data = await res.json();
@@ -56,15 +64,34 @@ async function performCheckIn(code: string, gate: string): Promise<CheckInResult
   if (!res.ok) {
     return {
       success: false,
-      message: data.error || 'Errore durante il check-in',
+      requiresPayment: data.requiresPayment || false,
+      ticket: data.ticket,
+      message: data.message || data.error || 'Errore durante il check-in',
+      error: data.error,
     };
   }
 
   return {
     success: true,
-    ticket: data.data.ticket,
-    message: 'Check-in effettuato con successo',
+    isComplimentary: data.isComplimentary || false,
+    ticket: data.ticket,
+    message: data.message || 'Check-in effettuato con successo',
   };
+}
+
+async function markTicketAsPaid(code: string, amount: number, method: string = 'CASH'): Promise<any> {
+  const res = await fetch(`/api/tickets/${code}/mark-paid`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amount, paymentMethod: method }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || 'Errore durante la registrazione del pagamento');
+  }
+
+  return res.json();
 }
 
 function ScannerView({ onScan, isProcessing, onError }: { 
@@ -178,13 +205,72 @@ function CheckInStatus({ result, onReset }: {
   result: CheckInResult | null; 
   onReset: () => void;
 }) {
+  const [isMarkingPaid, setIsMarkingPaid] = useState(false);
+  const { toast } = useToast();
+
   if (!result) return null;
 
-  const Icon = result.success ? CheckCircle2 : XCircle;
-  const colorClass = result.success 
-    ? 'bg-green-50 border-green-200' 
-    : 'bg-red-50 border-red-200';
-  const iconColor = result.success ? 'text-green-600' : 'text-red-600';
+  const handleMarkPaid = async () => {
+    if (!result.ticket) return;
+
+    setIsMarkingPaid(true);
+    try {
+      await markTicketAsPaid(
+        result.ticket.code,
+        result.ticket.price || 0,
+        'CASH'
+      );
+
+      toast({
+        title: 'Pagamento registrato',
+        description: `€${result.ticket.price?.toFixed(2)} pagato con successo`,
+      });
+
+      // Aggiorna il risultato per mostrare come pagato
+      result.success = true;
+      result.requiresPayment = false;
+      if (result.ticket) {
+        result.ticket.paid = true;
+      }
+      
+      // Reset dopo un momento
+      setTimeout(() => {
+        onReset();
+      }, 2000);
+    } catch (error: any) {
+      toast({
+        title: 'Errore',
+        description: error.message || 'Impossibile registrare il pagamento',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsMarkingPaid(false);
+    }
+  };
+
+  // Determina il tipo di badge
+  let badgeType: TicketBadgeType = 'paid';
+  if (result.requiresPayment) {
+    badgeType = 'unpaid';
+  } else if (result.isComplimentary || result.ticket?.isComplimentary) {
+    badgeType = 'complimentary';
+  } else if (!result.success && result.error?.includes('già utilizzato')) {
+    badgeType = 'used';
+  } else if (!result.success && result.error?.includes('annullato')) {
+    badgeType = 'cancelled';
+  }
+
+  const Icon = result.requiresPayment ? CreditCard : result.success ? CheckCircle2 : XCircle;
+  const colorClass = result.requiresPayment 
+    ? 'bg-orange-50 border-orange-200'
+    : result.success 
+      ? 'bg-green-50 border-green-200' 
+      : 'bg-red-50 border-red-200';
+  const iconColor = result.requiresPayment
+    ? 'text-orange-600'
+    : result.success 
+      ? 'text-green-600' 
+      : 'text-red-600';
 
   return (
     <Card className={`${colorClass} border-2`}>
@@ -192,14 +278,29 @@ function CheckInStatus({ result, onReset }: {
         <div className="text-center space-y-4">
           <Icon className={`w-16 h-16 mx-auto ${iconColor}`} />
           
-          <div>
-            <h3 className="text-2xl font-bold mb-2">
-              {result.success ? 'Check-in Riuscito!' : 'Check-in Fallito'}
+          <div className="space-y-2">
+            <h3 className="text-2xl font-bold">
+              {result.requiresPayment 
+                ? 'Pagamento Richiesto' 
+                : result.success 
+                  ? 'Check-in Riuscito!' 
+                  : 'Check-in Fallito'}
             </h3>
             <p className="text-muted-foreground">{result.message}</p>
+            
+            {result.ticket && (
+              <div className="flex justify-center">
+                <TicketBadge 
+                  type={badgeType} 
+                  price={result.ticket.price}
+                  currency={result.ticket.currency}
+                  className="text-lg py-2 px-4"
+                />
+              </div>
+            )}
           </div>
 
-          {result.success && result.ticket && (
+          {result.ticket && (
             <div className="bg-white rounded-lg p-4 space-y-2 text-left">
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="text-muted-foreground">Codice:</div>
@@ -207,6 +308,15 @@ function CheckInStatus({ result, onReset }: {
                 
                 <div className="text-muted-foreground">Tipo:</div>
                 <div className="font-medium">{result.ticket.type}</div>
+                
+                {result.ticket.price && (
+                  <>
+                    <div className="text-muted-foreground">Importo:</div>
+                    <div className="font-medium">
+                      €{result.ticket.price.toFixed(2)} {result.ticket.currency || 'EUR'}
+                    </div>
+                  </>
+                )}
                 
                 {result.ticket.listEntry && (
                   <>
@@ -227,9 +337,35 @@ function CheckInStatus({ result, onReset }: {
             </div>
           )}
 
-          <Button onClick={onReset} className="w-full">
-            Scansiona Prossimo
-          </Button>
+          <div className="space-y-2">
+            {result.requiresPayment && result.ticket && (
+              <Button 
+                onClick={handleMarkPaid} 
+                className="w-full bg-orange-600 hover:bg-orange-700"
+                disabled={isMarkingPaid}
+              >
+                {isMarkingPaid ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Registrazione...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Marca come Pagato (€{result.ticket.price?.toFixed(2)})
+                  </>
+                )}
+              </Button>
+            )}
+            
+            <Button 
+              onClick={onReset} 
+              variant={result.requiresPayment ? 'outline' : 'default'}
+              className="w-full"
+            >
+              {result.requiresPayment ? 'Annulla' : 'Scansiona Prossimo'}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

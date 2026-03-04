@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -11,19 +11,7 @@ function VerifyEmailContent() {
   const [message, setMessage] = useState('');
   const [email, setEmail] = useState('');
 
-  useEffect(() => {
-    const token = searchParams.get('token');
-
-    if (!token) {
-      setStatus('error');
-      setMessage('Token di verifica mancante');
-      return;
-    }
-
-    verifyEmail(token);
-  }, [searchParams]);
-
-  const verifyEmail = async (token: string) => {
+  const verifyEmail = useCallback(async (token: string) => {
     try {
       const res = await fetch(`/api/auth/verify-email?token=${token}`);
       const data = await res.json();
@@ -41,11 +29,23 @@ function VerifyEmailContent() {
         setStatus('error');
         setMessage(data.error || data.message || 'Errore durante la verifica');
       }
-    } catch (error) {
+    } catch {
       setStatus('error');
       setMessage('Errore di connessione. Riprova più tardi.');
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    const token = searchParams.get('token');
+
+    if (!token) {
+      setStatus('error');
+      setMessage('Token di verifica mancante');
+      return;
+    }
+
+    verifyEmail(token);
+  }, [searchParams, verifyEmail]);
 
   return (
     <div className="relative min-h-screen bg-background text-foreground overflow-hidden">

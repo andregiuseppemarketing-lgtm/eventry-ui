@@ -37,7 +37,7 @@ function VerifyEmailSentContent() {
       } else {
         setResendMessage(`❌ ${data.error || 'Errore durante l\'invio'}`);
       }
-    } catch (error) {
+    } catch {
       setResendMessage('❌ Errore di connessione. Riprova più tardi.');
     } finally {
       setResending(false);
@@ -98,20 +98,20 @@ function VerifyEmailSentContent() {
 
               <div className="p-4 rounded-lg bg-muted/50 border border-border space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  📧 Clicca sul link nell'email per completare la registrazione
+                  📧 Clicca sul link nell&apos;email per completare la registrazione
                 </p>
                 <p className="text-sm text-muted-foreground">
                   ⏱️ Il link è valido per <strong>30 minuti</strong>
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  📂 Non trovi l'email? Controlla anche lo spam
+                  📂 Non trovi l&apos;email? Controlla anche lo spam
                 </p>
               </div>
 
               {/* Resend button */}
               <div className="space-y-3">
                 <p className="text-sm text-center text-muted-foreground">
-                  Non hai ricevuto l'email?
+                  Non hai ricevuto l&apos;email?
                 </p>
                 <button
                   type="button"
@@ -132,7 +132,7 @@ function VerifyEmailSentContent() {
               {/* Login link */}
               <div className="pt-4 border-t border-border text-center">
                 <p className="text-sm text-muted-foreground">
-                  Hai già verificato l'email?{' '}
+                  Hai già verificato l&apos;email?{' '}
                   <Link href="/auth/login" className="text-primary hover:underline font-medium">
                     Accedi ora
                   </Link>
