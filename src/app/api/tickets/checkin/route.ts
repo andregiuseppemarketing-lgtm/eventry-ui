@@ -135,6 +135,35 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Verifica pagamento per biglietti non omaggio
+    const isComplimentary = !!ticket.complimentarySource;
+    const requiresPayment = 
+      !isComplimentary && 
+      ticket.type === 'DOOR_ONLY' && 
+      !ticket.paid;
+
+    if (requiresPayment) {
+      // Biglietto non pagato - richiede pagamento in cassa
+      return NextResponse.json({
+        success: false,
+        requiresPayment: true,
+        error: 'Pagamento richiesto',
+        message: `Questo biglietto richiede il pagamento di €${ticket.price?.toFixed(2) || '0.00'} in cassa`,
+        ticket: {
+          id: ticket.id,
+          code: ticket.code,
+          status: ticket.status,
+          type: ticket.type,
+          price: ticket.price,
+          currency: ticket.currency || 'EUR',
+          isComplimentary: isComplimentary,
+          paid: false,
+          event: ticket.event,
+          user: ticket.user,
+        },
+      });
+    }
+
     // Crea check-in record
     const checkin = await prisma.checkIn.create({
       data: {
@@ -158,7 +187,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: '✅ Check-in completato con successo!',
+      message: isComplimentary 
+        ? '✅ Biglietto OMAGGIO valido - Ingresso autorizzato!'
+        : '✅ Check-in completato con successo!',
+      isComplimentary,
       checkin: {
         id: checkin.id,
         scannedAt: checkin.scannedAt,
@@ -169,6 +201,8 @@ export async function POST(req: NextRequest) {
         id: ticket.id,
         code: ticket.code,
         status: 'CHECKED_IN',
+        type: ticket.type,
+        isComplimentary,
         event: ticket.event,
         user: ticket.user,
       },

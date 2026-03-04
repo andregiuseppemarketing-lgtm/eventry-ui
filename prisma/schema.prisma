@@ -35,56 +35,59 @@ model Session {
 }
 
 model User {
-  id                    String                 @id @default(cuid())
-  name                  String?
-  email                 String                 @unique
-  emailVerified         DateTime?
-  image                 String?
-  passwordHash          String?
-  role                  UserRole               @default(USER)
-  phone                 String?
-  birthDate             DateTime?
-  age                   Int?
-  ageConsent            Boolean                @default(false)
-  identityVerified      Boolean                @default(false)
-  identityVerifiedAt    DateTime?
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  ageVerified           Boolean                @default(false)
-  displayName           String?
-  firstName             String?
-  lastName              String?
-  middleName            String?
-  username              String?                @unique
-  resetToken            String?
-  resetTokenExpiry      DateTime?
-  accounts              Account[]
-  sessions              Session[]
-  artistProfile         ArtistProfile?
-  auditLogs             AuditLog[]
-  checkins              CheckIn[]
-  clubsOwned            Club[]                 @relation("ClubOwner")
-  eventsCreated         Event[]                @relation("EventCreator")
-  feedComments          FeedComment[]
-  feedItems             FeedItem[]             @relation("FeedItemAuthor")
-  feedLikes             FeedLike[]
-  reviewedVerifications IdentityVerification[] @relation("VerificationReviewer")
-  identityVerifications IdentityVerification[]
-  inviteLinks           InviteLink[]
-  listEntries           ListEntry[]            @relation("ListEntryCreator")
-  onboardingProgress    OnboardingProgress?
-  organizationProfile   OrganizationProfile?
-  prProfile             PRProfile?
-  securityReports       SecurityNote[]
-  ticketsIssued         Ticket[]               @relation("TicketIssuer")
-  ticketsOwned          Ticket[]               @relation("TicketOwner")
-  consents              UserConsent?
-  following             UserFollow[]           @relation("Follower")
-  followedBy            UserFollow[]           @relation("Following")
-  phoneVerification     UserPhone?
-  userProfile           UserProfile?
-  userStats             UserStats?
-  analyticsLogs         AnalyticsLog[]
+  id                      String                   @id @default(cuid())
+  name                    String?
+  email                   String                   @unique
+  emailVerified           DateTime?
+  image                   String?
+  passwordHash            String?
+  role                    UserRole                 @default(USER)
+  phone                   String?
+  birthDate               DateTime?
+  age                     Int?
+  ageConsent              Boolean                  @default(false)
+  identityVerified        Boolean                  @default(false)
+  identityVerifiedAt      DateTime?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  ageVerified             Boolean                  @default(false)
+  displayName             String?
+  firstName               String?
+  lastName                String?
+  middleName              String?
+  username                String?                  @unique
+  resetToken              String?
+  resetTokenExpiry        DateTime?
+  accounts                Account[]
+  sessions                Session[]
+  artistProfile           ArtistProfile?
+  auditLogs               AuditLog[]
+  checkins                CheckIn[]
+  clubsOwned              Club[]                   @relation("ClubOwner")
+  eventsCreated           Event[]                  @relation("EventCreator")
+  feedComments            FeedComment[]
+  feedItems               FeedItem[]               @relation("FeedItemAuthor")
+  feedLikes               FeedLike[]
+  reviewedVerifications   IdentityVerification[]   @relation("VerificationReviewer")
+  identityVerifications   IdentityVerification[]
+  inviteLinks             InviteLink[]
+  listEntries             ListEntry[]              @relation("ListEntryCreator")
+  onboardingProgress      OnboardingProgress?
+  organizationProfile     OrganizationProfile?
+  prProfile               PRProfile?
+  securityReports         SecurityNote[]
+  ticketsIssued           Ticket[]                 @relation("TicketIssuer")
+  ticketsOwned            Ticket[]                 @relation("TicketOwner")
+  ticketsPaid             Ticket[]                 @relation("TicketPaidBy")
+  ticketsArrived          Ticket[]                 @relation("TicketArrivedBy")
+  ticketsAdmitted         Ticket[]                 @relation("TicketAdmittedBy")
+  consents                UserConsent?
+  following               UserFollow[]             @relation("Follower")
+  followedBy              UserFollow[]             @relation("Following")
+  phoneVerification       UserPhone?
+  userProfile             UserProfile?
+  userStats               UserStats?
+  analyticsLogs           AnalyticsLog[]
   emailVerificationTokens EmailVerificationToken[]
 
   @@map("users")
@@ -184,6 +187,7 @@ model Event {
   securityNotes   SecurityNote[]
   tickets         Ticket[]
   eventStats      EventStats[]
+  quotas          EventQuota[]
 
   @@index([status, dateStart])
   @@index([venueId])
@@ -307,33 +311,51 @@ model ListEntry {
 }
 
 model Ticket {
-  id                String          @id @default(cuid())
-  eventId           String
-  userId            String?
-  guestId           String?
-  listEntryId       String?
-  issuedByUserId    String?
-  type              TicketType      @default(FREE_LIST)
-  price             Float?
-  currency          String?         @default("EUR")
-  code              String          @unique
-  qrData            String
-  status            TicketStatus    @default(NEW)
-  paid              Boolean         @default(false)
-  paymentIntentId   String?
-  paymentStatus     PaymentStatus   @default(PENDING)
-  receiptUrl        String?
-  issuedAt          DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  checkins          CheckIn[]
-  consumptions      Consumption[]
-  feedbacks         EventFeedback[]
-  securityNotes     SecurityNote[]
-  event             Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  guest             Guest?          @relation(fields: [guestId], references: [id])
-  issuedBy          User?           @relation("TicketIssuer", fields: [issuedByUserId], references: [id])
-  listEntry         ListEntry?      @relation(fields: [listEntryId], references: [id])
-  user              User?           @relation("TicketOwner", fields: [userId], references: [id])
+  id                   String          @id @default(cuid())
+  eventId              String
+  userId               String?
+  guestId              String?
+  listEntryId          String?
+  issuedByUserId       String?
+  type                 TicketType      @default(FREE_LIST)
+  price                Float?
+  currency             String?         @default("EUR")
+  code                 String          @unique
+  qrData               String
+  status               TicketStatus    @default(NEW)
+  paid                 Boolean         @default(false)
+  paymentIntentId      String?
+  paymentStatus        PaymentStatus   @default(PENDING)
+  receiptUrl           String?
+  issuedAt             DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  paymentRequired      Boolean         @default(false)
+  paymentMethod        PaymentMethod?
+  paidAt               DateTime?
+  paidByUserId         String?
+  paidAmount           Float?
+  paidGate             Gate?
+  complimentarySource  String?
+  complimentaryQuotaId String?
+  arrivedAt            DateTime?
+  arrivedByUserId      String?
+  arrivedGate          Gate?
+  admittedAt           DateTime?
+  admittedByUserId     String?
+  admittedGate         Gate?
+  checkins             CheckIn[]
+  consumptions         Consumption[]
+  feedbacks            EventFeedback[]
+  securityNotes        SecurityNote[]
+  event                Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  guest                Guest?          @relation(fields: [guestId], references: [id])
+  issuedBy             User?           @relation("TicketIssuer", fields: [issuedByUserId], references: [id])
+  listEntry            ListEntry?      @relation(fields: [listEntryId], references: [id])
+  user                 User?           @relation("TicketOwner", fields: [userId], references: [id])
+  paidBy               User?           @relation("TicketPaidBy", fields: [paidByUserId], references: [id])
+  arrivedBy            User?           @relation("TicketArrivedBy", fields: [arrivedByUserId], references: [id])
+  admittedBy           User?           @relation("TicketAdmittedBy", fields: [admittedByUserId], references: [id])
+  complimentaryQuota   EventQuota?     @relation(fields: [complimentaryQuotaId], references: [id])
 
   @@index([code])
   @@index([eventId, status])
@@ -400,15 +422,68 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+model EventQuota {
+  id                       String                       @id @default(cuid())
+  eventId                  String
+  actorType                ActorType
+  actorId                  String
+  total                    Int                          @default(0)
+  used                     Int                          @default(0)
+  available                Int                          @default(0)
+  createdAt                DateTime                     @default(now())
+  updatedAt                DateTime                     @updatedAt
+  event                    Event                        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  auditLogs                QuotaAuditLog[]
+  complimentaryAssignments ComplimentaryAssignmentLog[]
+  tickets                  Ticket[]
+
+  @@unique([eventId, actorType, actorId])
+  @@index([eventId])
+  @@index([actorType, actorId])
+  @@map("event_quotas")
+}
+
+model QuotaAuditLog {
+  id        String     @id @default(cuid())
+  quotaId   String
+  changedBy String
+  oldValue  Int
+  newValue  Int
+  delta     Int
+  reason    String?
+  timestamp DateTime   @default(now())
+  quota     EventQuota @relation(fields: [quotaId], references: [id], onDelete: Cascade)
+
+  @@index([quotaId])
+  @@index([timestamp])
+  @@map("quota_audit_logs")
+}
+
+model ComplimentaryAssignmentLog {
+  id         String     @id @default(cuid())
+  quotaId    String
+  ticketId   String     @unique
+  assignedBy String
+  assignedTo String
+  guestName  String?
+  assignedAt DateTime   @default(now())
+  quota      EventQuota @relation(fields: [quotaId], references: [id], onDelete: Cascade)
+
+  @@index([quotaId])
+  @@index([assignedBy])
+  @@index([assignedAt])
+  @@map("complimentary_assignment_logs")
+}
+
 model EmailLog {
-  id          String   @id @default(cuid())
-  recipient   String
-  subject     String
-  type        String   // reset_password, ticket_confirmation, etc
-  status      String   // sent, failed
-  error       String?
-  sentAt      DateTime @default(now())
-  resendId    String?  // ID from Resend API
+  id        String   @id @default(cuid())
+  recipient String
+  subject   String
+  type      String // reset_password, ticket_confirmation, etc
+  status    String // sent, failed
+  error     String?
+  sentAt    DateTime @default(now())
+  resendId  String? // ID from Resend API
 
   @@index([recipient])
   @@index([type])
@@ -818,6 +893,7 @@ enum UserRole {
   STAFF
   USER
   SECURITY
+  VENUE
 }
 
 enum EventStatus {
@@ -853,13 +929,13 @@ enum EntryStatus {
 }
 
 enum TicketType {
-  FREE          // Legacy
-  LIST          // Legacy
-  PAID          // Legacy
-  FREE_LIST     // Evento gratuito (solo lista)
-  DOOR_ONLY     // Pagamento al botteghino
-  PRE_SALE      // Prevendita online
-  FULL_TICKET   // Biglietto intero online
+  FREE // Legacy
+  LIST // Legacy
+  PAID // Legacy
+  FREE_LIST // Evento gratuito (solo lista)
+  DOOR_ONLY // Pagamento al botteghino
+  PRE_SALE // Prevendita online
+  FULL_TICKET // Biglietto intero online
 }
 
 enum TicketStatus {
@@ -869,6 +945,11 @@ enum TicketStatus {
   USED
   CHECKED_IN
   CANCELLED
+  REGISTERED
+  ARRIVED
+  ADMITTED
+  REJECTED
+  NO_SHOW
 }
 
 enum PaymentStatus {
@@ -876,12 +957,32 @@ enum PaymentStatus {
   PAID
   FAILED
   REFUNDED
+  NOT_REQUIRED
+  UNPAID
+  PAID_DOOR
+  PAID_ONLINE
 }
 
 enum Gate {
   MAIN
   VIP
   STAFF
+  EMERGENCY
+}
+
+enum ActorType {
+  PR
+  ORGANIZATION
+  VENUE
+}
+
+enum PaymentMethod {
+  CASH
+  CARD_DOOR
+  SATISPAY
+  STRIPE
+  COMPLIMENTARY
+  FREE_EVENT
 }
 
 enum BookingMethod {

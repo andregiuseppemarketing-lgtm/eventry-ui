@@ -11,6 +11,11 @@ import {
 import { sendMessage, sendPhoto, MessageTemplates, getActiveProviders } from '@/lib/messaging';
 import QRCode from 'qrcode';
 import { rateLimitOr429, getClientIp } from '@/lib/ratelimit';
+import { ActorType } from '@prisma/client';
+import { 
+  checkComplimentaryQuota, 
+  consumeComplimentaryPass
+} from '@/lib/complimentary-service';
 
 /**
  * POST /api/tickets/issue
@@ -107,6 +112,76 @@ export async function POST(req: NextRequest) {
       return ApiErrors.badRequest('Ticket already exists for this entry/user');
     }
 
+    // Gestione biglietti omaggio con validazione quota
+    const isComplimentary = body.isComplimentary === true;
+    const complimentaryReason = body.complimentaryReason || null;
+    let complimentaryGrantedBy = null;
+    let actorType: ActorType | null = null;
+    let actorId: string | null = null;
+
+    if (isComplimentary) {
+      // Determina l'actor type in base al ruolo e proprietà evento
+      const event = await prisma.event.findUnique({
+        where: { id: eventId },
+        select: { createdByUserId: true, venueId: true },
+      });
+
+      if (!event) {
+        return ApiErrors.notFound('Event');
+      }
+
+      // Determina actorType e actorId
+      if (event.createdByUserId === user.id || user.role === 'ADMIN' || user.role === 'ORGANIZER') {
+        actorType = 'ORGANIZATION';
+        actorId = eventId; // ORGANIZATION quota is per-event
+      } else if (user.role === 'VENUE') {
+        if (!event.venueId) {
+          return createApiResponse(
+            undefined,
+            'Impossibile assegnare biglietti omaggio: evento non associato a nessun locale',
+            400
+          );
+        }
+        actorType = 'VENUE';
+        actorId = event.venueId; // VENUE quota uses venueId
+      } else if (user.role === 'PR') {
+        actorType = 'PR';
+        actorId = user.id; // PR quota is per-user
+      } else {
+        return createApiResponse(
+          undefined,
+          'Non hai il permesso di assegnare biglietti omaggio',
+          403
+        );
+      }
+
+      // Verifica quota disponibile PRIMA di creare il ticket
+      try {
+        const quotaCheck = await checkComplimentaryQuota(
+          eventId,
+          actorType,
+          actorId
+        );
+        
+        if (!quotaCheck.available) {
+          return createApiResponse(
+            undefined,
+            `Quota biglietti omaggio esaurita. Hai utilizzato ${quotaCheck.max - quotaCheck.remaining}/${quotaCheck.max} biglietti disponibili.`,
+            400
+          );
+        }
+
+        complimentaryGrantedBy = user.id;
+      } catch (error) {
+        console.error('Errore verifica quota complimentary:', error);
+        return createApiResponse(
+          undefined,
+          error instanceof Error ? error.message : 'Errore verifica quota complimentary',
+          400
+        );
+      }
+    }
+
     // Generate unique ticket code
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -131,11 +206,14 @@ export async function POST(req: NextRequest) {
         userId,
         issuedByUserId: user.id,
         type,
-        price,
+        price: isComplimentary ? 0 : price,
         currency,
         code: ticketCode,
         qrData,
         status: 'NEW',
+        paid: isComplimentary || type !== 'PAID',
+        complimentarySource: isComplimentary ? 'MANUAL' : null,
+        // complimentaryQuotaId will be set by consumeComplimentaryPass
       },
       include: {
         event: {
@@ -157,6 +235,39 @@ export async function POST(req: NextRequest) {
         },
       },
     });
+
+    // Consuma quota complimentary se necessario (transazione atomica)
+    if (isComplimentary && complimentaryGrantedBy && actorType && actorId) {
+      try {
+        // Determina assignedToId: userId from body, or guestId from listEntry, or undefined
+        const assignedToId = userId || listEntry?.guestId || undefined;
+        const guestName = listEntry 
+          ? `${listEntry.firstName} ${listEntry.lastName}` 
+          : targetUser?.name || undefined;
+        
+        await consumeComplimentaryPass(
+          eventId,
+          ticket.id,
+          actorType,
+          actorId,
+          user.id,
+          assignedToId,
+          complimentaryReason || undefined,
+          guestName
+        );
+      } catch (quotaError) {
+        console.error('Errore consumo quota complimentary:', quotaError);
+        // Annulla il ticket se la quota fallisce
+        await prisma.ticket.delete({ where: { id: ticket.id } });
+        return createApiResponse(
+          undefined,
+          quotaError instanceof Error 
+            ? quotaError.message 
+            : 'Errore durante il consumo della quota complimentary',
+          500
+        );
+      }
+    }
 
     // Audit log
     await createAuditLog(
