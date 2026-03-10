@@ -10,10 +10,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Settings, User } from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
+import { getUserRole } from '@/lib/navigation-utils';
+import { getQuickActionsByRole } from '@/lib/navigation-config';
+import Link from 'next/link';
 
 export function UserNav() {
   const { data: session } = useSession();
@@ -22,6 +26,9 @@ export function UserNav() {
   if (!session?.user) {
     return null;
   }
+
+  const userRole = getUserRole(session);
+  const quickActions = userRole ? getQuickActionsByRole(userRole) : [];
 
   const initials = session.user.name
     ? session.user.name
@@ -57,6 +64,33 @@ export function UserNav() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        
+        {/* Quick Actions */}
+        {quickActions.length > 0 && (
+          <>
+            <DropdownMenuGroup>
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <DropdownMenuItem key={action.href} asChild>
+                    <Link href={action.href}>
+                      {Icon && <Icon className="mr-2 h-4 w-4" />}
+                      <span>{action.label}</span>
+                      {action.shortcut && (
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          {action.shortcut}
+                        </span>
+                      )}
+                    </Link>
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        
+        {/* Settings */}
         <DropdownMenuItem onClick={() => router.push('/dashboard/settings' as Route)}>
           <Settings className="mr-2 h-4 w-4" />
           <span>Impostazioni</span>

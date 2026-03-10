@@ -8,7 +8,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PhoneModal } from '@/components/phone-modal';
-import { UserNav } from '@/components/user-nav';
 import { MobileNav } from '@/components/mobile-nav';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -568,11 +567,6 @@ export default function DashboardPage() {
                 <p className="text-sm md:text-base text-muted-foreground max-w-2xl">
                   Monitora performance, gestisci eventi e accedi rapidamente agli strumenti di organizzazione.
                 </p>
-              </div>
-              
-              {/* Avatar desktop */}
-              <div className="hidden md:block">
-                <UserNav />
               </div>
             </div>
 

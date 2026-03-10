@@ -22,6 +22,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import Link from 'next/link';
+import { Breadcrumbs } from '@/components/navigation/breadcrumbs';
 
 async function fetchGuestDetail(id: string) {
   const res = await fetch(`/api/guests/${id}`);
@@ -72,6 +73,11 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
 
   const { guest, stats } = data.data;
 
+  const customLabels = {
+    '/clienti': 'Clienti',
+    [`/clienti/${unwrappedParams.id}`]: `${guest.firstName} ${guest.lastName}`,
+  };
+
   const getSegmentColor = (segment: string) => {
     const colors = {
       NEW: 'text-blue-400',
@@ -93,6 +99,8 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
 
       <div className="relative z-10">
         <div className="container mx-auto px-6 py-16">
+          <Breadcrumbs customLabels={customLabels} />
+          
           <div className="flex flex-col gap-8">
             {/* Header */}
             <div>

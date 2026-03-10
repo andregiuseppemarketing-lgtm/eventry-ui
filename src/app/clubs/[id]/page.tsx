@@ -39,6 +39,7 @@ import { DJLineup } from '@/components/dj-lineup';
 import { CommunitySection } from '@/components/community-section';
 import { format, parseISO } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { Breadcrumbs } from '@/components/navigation/breadcrumbs';
 
 type ClubEvent = {
   id: string;
@@ -163,6 +164,11 @@ export default function ClubProfilePage() {
 
   const mainVenue = club.venues?.[0];
 
+  const customLabels = {
+    '/clubs': 'Locali',
+    [`/clubs/${params.id}`]: club.name,
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Hero Section con Cover Image */}
@@ -275,6 +281,7 @@ export default function ClubProfilePage() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6 space-y-8">
+        <Breadcrumbs customLabels={customLabels} />
         
         {/* Stats Bar */}
         <div className="grid grid-cols-3 gap-4">

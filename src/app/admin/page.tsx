@@ -14,6 +14,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Breadcrumbs } from '@/components/navigation/breadcrumbs';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,6 +76,8 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <Breadcrumbs customLabels={{ '/admin': 'Admin Panel' }} />
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

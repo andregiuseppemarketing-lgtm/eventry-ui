@@ -19,26 +19,11 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Home, 
-  Calendar, 
-  QrCode, 
-  Settings, 
-  LogOut,
-  BarChart3,
-  Building2,
-  Mail,
-  Music2,
-  User as UserIcon,
-} from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-type NavItem = {
-  icon: any;
-  label: string;
-  href: Route;
-  roles?: string[];
-};
+import { getUserRole, isActiveRoute } from '@/lib/navigation-utils';
+import { getMobileNavByRole, getSidebarSectionsByRole, filterEnabledItems } from '@/lib/navigation-config';
+import { RoleBadge } from '@/components/navigation/role-badge';
 
 export function MobileNav() {
   const { data: session } = useSession();
@@ -49,6 +34,17 @@ export function MobileNav() {
     return null;
   }
 
+  const userRole = getUserRole(session);
+  
+  // Get navigation items from centralized config
+  const mobileNavItems = userRole ? filterEnabledItems(getMobileNavByRole(userRole)) : [];
+  const sidebarSections = userRole ? getSidebarSectionsByRole(userRole) : [];
+  
+  // Flatten all sidebar items for sheet menu
+  const allMenuItems = sidebarSections.flatMap(section => 
+    filterEnabledItems(section.items)
+  );
+
   const initials = session.user.name
     ? session.user.name
         .split(' ')
@@ -58,49 +54,31 @@ export function MobileNav() {
         .slice(0, 2)
     : session.user.email?.[0].toUpperCase() || 'U';
 
-  const navItems: NavItem[] = [
-    { icon: Home, label: 'Dashboard', href: '/dashboard' as Route },
-    { icon: Calendar, label: 'Eventi', href: '/eventi' as Route },
-    { icon: QrCode, label: 'Check-in', href: '/checkin' as Route, roles: ['ORGANIZER', 'ADMIN'] },
-  ];
-
-  const menuItems: NavItem[] = [
-    { icon: BarChart3, label: 'Analytics', href: '/analytics/general' as Route, roles: ['ORGANIZER', 'ADMIN'] },
-    { icon: Building2, label: 'I Miei Club', href: '/clubs' as Route, roles: ['ORGANIZER', 'ADMIN'] },
-    { icon: Mail, label: 'Marketing', href: '/dashboard/marketing' as Route, roles: ['ADMIN'] },
-    { icon: Music2, label: 'DJ Dashboard', href: '/dj/dashboard' as Route, roles: ['DJ'] },
-    { icon: Settings, label: 'Impostazioni', href: '/dashboard/settings' as Route },
-  ];
-
-  const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');
-
   return (
     <>
       {/* Bottom Navigation Bar - Solo mobile */}
       <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <nav className="flex items-center justify-around h-16 px-2">
-          {navItems.map((item) => {
-            // Verifica permessi ruolo
-            if (item.roles && !item.roles.includes(session.user.role || '')) {
-              return null;
-            }
-
+          {mobileNavItems.slice(0, 3).map((item) => {
             const Icon = item.icon;
-            const active = isActive(item.href);
+            const active = isActiveRoute(pathname, item.href);
 
             return (
               <Button
                 key={item.href}
                 variant="ghost"
                 size="sm"
-                onClick={() => router.push(item.href)}
+                onClick={() => router.push(item.href as Route)}
                 className={cn(
                   'flex flex-col items-center justify-center gap-1 h-full flex-1 rounded-none',
                   active && 'text-primary'
                 )}
               >
-                <Icon className={cn('h-5 w-5', active && 'animate-pulse')} />
-                <span className="text-xs">{item.label}</span>
+                {Icon && <Icon className={cn('h-5 w-5', active && 'animate-pulse')} />}
+                <span className="text-xs truncate max-w-[60px]">{item.label}</span>
+                {item.badge && (
+                  <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
+                )}
               </Button>
             );
           })}
@@ -134,10 +112,10 @@ export function MobileNav() {
                   <div className="flex-1 text-left">
                     <SheetTitle>{session.user.name || 'Utente'}</SheetTitle>
                     <SheetDescription>{session.user.email}</SheetDescription>
-                    {session.user.role && (
-                      <p className="text-sm text-primary font-medium mt-1">
-                        {session.user.role}
-                      </p>
+                    {userRole && (
+                      <div className="mt-2">
+                        <RoleBadge role={userRole} />
+                      </div>
                     )}
                   </div>
                 </div>
@@ -147,14 +125,9 @@ export function MobileNav() {
 
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-muted-foreground mb-3">NAVIGAZIONE</p>
-                {menuItems.map((item) => {
-                  // Verifica permessi ruolo
-                  if (item.roles && !item.roles.includes(session.user.role || '')) {
-                    return null;
-                  }
-
+                {allMenuItems.map((item) => {
                   const Icon = item.icon;
-                  const active = isActive(item.href);
+                  const active = isActiveRoute(pathname, item.href);
 
                   return (
                     <Button
@@ -162,15 +135,20 @@ export function MobileNav() {
                       variant={active ? 'secondary' : 'ghost'}
                       size="lg"
                       onClick={() => {
-                        router.push(item.href);
+                        router.push(item.href as Route);
                         // Chiudi sheet
                         const closeButton = document.querySelector('[data-sheet-close]') as HTMLButtonElement;
                         closeButton?.click();
                       }}
                       className="w-full justify-start"
                     >
-                      <Icon className="mr-3 h-5 w-5" />
-                      {item.label}
+                      {Icon && <Icon className="mr-3 h-5 w-5" />}
+                      <span className="flex-1 text-left">{item.label}</span>
+                      {item.badge && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {item.badge}
+                        </span>
+                      )}
                     </Button>
                   );
                 })}
