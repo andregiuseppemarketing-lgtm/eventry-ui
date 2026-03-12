@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       return rateLimitResult.response;
     }
 
-    const { ticketCode, qrData } = await req.json();
+    const { ticketCode, qrData, eventId } = await req.json();
 
     if (!ticketCode && !qrData) {
       return NextResponse.json(
@@ -98,6 +98,26 @@ export async function POST(req: NextRequest) {
           message: 'QR code non valido o biglietto inesistente',
         },
         { status: 404 }
+      );
+    }
+
+    // ⚠️ VALIDAZIONE EVENTO: Se eventId è specificato, verifica che il ticket appartenga a quell'evento
+    if (eventId && ticket.eventId !== eventId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Biglietto per evento diverso',
+          message: `❌ Attenzione: Questo biglietto appartiene a "${ticket.event.title}", non all'evento selezionato.`,
+          ticket: {
+            code: ticket.code,
+            status: ticket.status,
+            event: ticket.event,
+            expectedEventId: eventId,
+            actualEventId: ticket.eventId,
+          },
+          wrongEvent: true,
+        },
+        { status: 400 }
       );
     }
 

@@ -4,12 +4,14 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 import type { Route } from 'next';
+import { useEventContext } from '@/hooks/use-event-context';
+import { EventSelector } from '@/components/event-selector';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Camera, CheckCircle2, XCircle, Loader2, AlertCircle, ArrowLeft, CreditCard } from 'lucide-react';
+import { Camera, CheckCircle2, XCircle, Loader2, AlertCircle, ArrowLeft, CreditCard, CalendarDays, MapPin } from 'lucide-react';
 import { TicketBadge, TicketBadgeType } from '@/components/ticket-badge';
 import dynamicImport from 'next/dynamic';
 
@@ -30,6 +32,7 @@ type CheckInResult = {
   success: boolean;
   requiresPayment?: boolean;
   isComplimentary?: boolean;
+  wrongEvent?: boolean; // Flag per biglietto evento diverso
   ticket?: {
     id: string;
     code: string;
@@ -39,6 +42,10 @@ type CheckInResult = {
     currency?: string;
     paid?: boolean;
     isComplimentary?: boolean;
+    event?: {
+      id: string;
+      title: string;
+    };
     listEntry?: {
       firstName: string;
       lastName: string;
@@ -52,11 +59,15 @@ type CheckInResult = {
   error?: string;
 };
 
-async function performCheckIn(code: string, gate: string): Promise<CheckInResult> {
+async function performCheckIn(code: string, gate: string, eventId?: string | null): Promise<CheckInResult> {
   const res = await fetch('/api/tickets/checkin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ticketCode: code, gate }),
+    body: JSON.stringify({ 
+      ticketCode: code, 
+      gate,
+      eventId: eventId || undefined // Passa eventId solo se disponibile
+    }),
   });
 
   const data = await res.json();
@@ -254,19 +265,31 @@ function CheckInStatus({ result, onReset }: {
     badgeType = 'unpaid';
   } else if (result.isComplimentary || result.ticket?.isComplimentary) {
     badgeType = 'complimentary';
+  } else if (result.wrongEvent) {
+    badgeType = 'cancelled'; // Usa badge cancelled per evento errato (rosso)
   } else if (!result.success && result.error?.includes('già utilizzato')) {
     badgeType = 'used';
   } else if (!result.success && result.error?.includes('annullato')) {
     badgeType = 'cancelled';
   }
 
-  const Icon = result.requiresPayment ? CreditCard : result.success ? CheckCircle2 : XCircle;
-  const colorClass = result.requiresPayment 
-    ? 'bg-orange-50 border-orange-200'
-    : result.success 
-      ? 'bg-green-50 border-green-200' 
-      : 'bg-red-50 border-red-200';
-  const iconColor = result.requiresPayment
+  const Icon = result.wrongEvent 
+    ? AlertCircle 
+    : result.requiresPayment 
+      ? CreditCard 
+      : result.success 
+        ? CheckCircle2 
+        : XCircle;
+  const colorClass = result.wrongEvent
+    ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50'
+    : result.requiresPayment 
+      ? 'bg-orange-50 border-orange-200'
+      : result.success 
+        ? 'bg-green-50 border-green-200' 
+        : 'bg-red-50 border-red-200';
+  const iconColor = result.wrongEvent
+    ? 'text-amber-600 dark:text-amber-500'
+    : result.requiresPayment
     ? 'text-orange-600'
     : result.success 
       ? 'text-green-600' 
@@ -280,11 +303,13 @@ function CheckInStatus({ result, onReset }: {
           
           <div className="space-y-2">
             <h3 className="text-2xl font-bold">
-              {result.requiresPayment 
-                ? 'Pagamento Richiesto' 
-                : result.success 
-                  ? 'Check-in Riuscito!' 
-                  : 'Check-in Fallito'}
+              {result.wrongEvent
+                ? '⚠️ Evento Errato'
+                : result.requiresPayment 
+                  ? 'Pagamento Richiesto' 
+                  : result.success 
+                    ? 'Check-in Riuscito!' 
+                    : 'Check-in Fallito'}
             </h3>
             <p className="text-muted-foreground">{result.message}</p>
             
@@ -308,6 +333,15 @@ function CheckInStatus({ result, onReset }: {
                 
                 <div className="text-muted-foreground">Tipo:</div>
                 <div className="font-medium">{result.ticket.type}</div>
+                
+                {result.wrongEvent && result.ticket.event && (
+                  <>
+                    <div className="text-muted-foreground">Evento del biglietto:</div>
+                    <div className="font-medium text-amber-700 dark:text-amber-400">
+                      {result.ticket.event.title}
+                    </div>
+                  </>
+                )}
                 
                 {result.ticket.price && (
                   <>
@@ -377,6 +411,7 @@ function CheckInPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const { selectedEvent, selectedEventId, selectEvent } = useEventContext();
   
   const [mode, setMode] = useState<'scanner' | 'manual'>('scanner');
   const [gate, setGate] = useState('MAIN');
@@ -390,6 +425,14 @@ function CheckInPage() {
       router.push('/auth/login' as Route);
     }
   }, [status, router]);
+
+  // Sync eventId from URL to EventContext
+  useEffect(() => {
+    const eventIdParam = searchParams.get('eventId');
+    if (eventIdParam && eventIdParam !== selectedEventId) {
+      selectEvent(eventIdParam);
+    }
+  }, [searchParams, selectedEventId, selectEvent]);
 
   useEffect(() => {
     const gateParam = searchParams.get('gate');
@@ -415,7 +458,7 @@ function CheckInPage() {
     setResult(null);
 
     try {
-      const checkInResult = await performCheckIn(code, gate);
+      const checkInResult = await performCheckIn(code, gate, selectedEventId);
       setResult(checkInResult);
       
       if (checkInResult.success) {
@@ -476,6 +519,83 @@ function CheckInPage() {
             Scansiona i biglietti per consentire l'accesso all'evento
           </p>
         </div>
+
+        {/* Event Selector */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Evento Attivo</CardTitle>
+            <CardDescription>
+              Seleziona l'evento per cui effettuare il check-in
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <EventSelector position="inline" />
+          </CardContent>
+        </Card>
+
+        {/* Event Info or Warning */}
+        {selectedEvent && selectedEventId ? (
+          <Card className="mb-6 glass border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-500/10 to-background">
+            <CardContent className="pt-6">
+              <div className="flex gap-3">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  </div>
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div>
+                    <p className="font-semibold text-sm text-emerald-600 dark:text-emerald-400 mb-1">
+                      ✓ Evento Selezionato
+                    </p>
+                    <p className="font-bold text-lg">{selectedEvent.title}</p>
+                  </div>
+                  <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4" />
+                      {new Date(selectedEvent.dateStart).toLocaleDateString('it-IT', {
+                        weekday: 'short',
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      {selectedEvent.venue.name} - {selectedEvent.venue.city}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    I check-in verranno effettuati per questo evento.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="mb-6 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50 border-2">
+            <CardContent className="pt-6">
+              <div className="flex gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-semibold text-amber-900 dark:text-amber-200 mb-2">
+                    ⚠️ Nessun evento selezionato
+                  </p>
+                  <p className="text-amber-800 dark:text-amber-300 mb-2">
+                    <strong>Attenzione:</strong> Non hai selezionato un evento specifico. 
+                    I check-in verranno comunque processati, ma potresti fare check-in 
+                    di biglietti per l'evento sbagliato senza accorgertene.
+                  </p>
+                  <p className="text-amber-700 dark:text-amber-400 text-xs">
+                    💡 <strong>Suggerimento:</strong> Seleziona l'evento dall'elenco sopra per evitare errori operativi.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4 mb-6">
