@@ -9,6 +9,8 @@ import { isActiveRoute } from '@/lib/navigation-utils';
 import { UserNav } from '@/components/user-nav';
 import { RoleBadge } from './role-badge';
 import { cn } from '@/lib/utils';
+import { useEventContext } from '@/contexts/event-context';
+import { preserveEventId } from '@/lib/event-navigation';
 
 /**
  * Desktop Navbar - Global navigation header
@@ -18,6 +20,7 @@ export function Navbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const userRole = getUserRole(session);
+  const { selectedEventId } = useEventContext();
 
   // Don't render if no user role
   if (!userRole) return null;
@@ -30,7 +33,7 @@ export function Navbar() {
       <div className="container flex h-16 items-center px-4">
         {/* Logo */}
         <div className="mr-8 hidden md:block">
-          <Link href="/dashboard" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+          <Link href={preserveEventId('/dashboard', selectedEventId)} className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
             <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               EVENTRY
             </span>
@@ -74,7 +77,7 @@ export function Navbar() {
 
         {/* Mobile - Logo + User Nav */}
         <div className="flex md:hidden items-center justify-between flex-1">
-          <Link href="/dashboard" className="flex items-center space-x-2">
+          <Link href={preserveEventId('/dashboard', selectedEventId)} className="flex items-center space-x-2">
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               EVENTRY
             </span>

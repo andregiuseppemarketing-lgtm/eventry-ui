@@ -24,11 +24,24 @@ import { cn } from '@/lib/utils';
 import { getUserRole, isActiveRoute } from '@/lib/navigation-utils';
 import { getMobileNavByRole, getSidebarSectionsByRole, filterEnabledItems } from '@/lib/navigation-config';
 import { RoleBadge } from '@/components/navigation/role-badge';
+import { useEventContext } from '@/contexts/event-context';
+import { preserveEventId } from '@/lib/event-navigation';
+
+// Routes that should preserve eventId during navigation
+const EVENT_CENTRIC_ROUTES = [
+  '/dashboard',
+  '/analytics/general',
+  '/checkin',
+  '/lista',
+  '/situa',
+  '/clienti',
+];
 
 export function MobileNav() {
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const { selectedEventId } = useEventContext();
 
   if (!session?.user) {
     return null;
@@ -44,6 +57,14 @@ export function MobileNav() {
   const allMenuItems = sidebarSections.flatMap(section => 
     filterEnabledItems(section.items)
   );
+
+  // Helper to get the correct href with eventId if needed
+  const getNavigationHref = (href: string): string => {
+    if (EVENT_CENTRIC_ROUTES.includes(href)) {
+      return preserveEventId(href, selectedEventId);
+    }
+    return href;
+  };
 
   const initials = session.user.name
     ? session.user.name
@@ -68,7 +89,7 @@ export function MobileNav() {
                 key={item.href}
                 variant="ghost"
                 size="sm"
-                onClick={() => router.push(item.href as Route)}
+                onClick={() => router.push(getNavigationHref(item.href) as Route)}
                 className={cn(
                   'flex flex-col items-center justify-center gap-1 h-full flex-1 rounded-none',
                   active && 'text-primary'
@@ -135,7 +156,7 @@ export function MobileNav() {
                       variant={active ? 'secondary' : 'ghost'}
                       size="lg"
                       onClick={() => {
-                        router.push(item.href as Route);
+                        router.push(getNavigationHref(item.href) as Route);
                         // Chiudi sheet
                         const closeButton = document.querySelector('[data-sheet-close]') as HTMLButtonElement;
                         closeButton?.click();

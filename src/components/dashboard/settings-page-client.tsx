@@ -11,11 +11,14 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save, User, Mail, Shield } from 'lucide-react';
 import Link from 'next/link';
+import { useEventContext } from '@/contexts/event-context';
+import { preserveEventId } from '@/lib/event-navigation';
 
 export function SettingsPageClient() {
   const { data: session, status, update } = useSession();
   const router = useRouter();
   const { toast } = useToast();
+  const { selectedEventId } = useEventContext();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -89,7 +92,7 @@ export function SettingsPageClient() {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/dashboard">
+          <Link href={preserveEventId('/dashboard', selectedEventId)}>
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Torna alla Dashboard

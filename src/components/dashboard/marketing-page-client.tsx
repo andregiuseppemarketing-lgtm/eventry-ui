@@ -133,7 +133,7 @@ export function MarketingAutomationPageClient() {
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/dashboard">
+          <Link href={preserveEventId('/dashboard', selectedEventId)}>
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Torna alla Dashboard

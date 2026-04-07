@@ -31,6 +31,8 @@ import {
   Calendar,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useEventContext } from '@/contexts/event-context';
+import { preserveEventId } from '@/lib/event-navigation';
 
 type EventStats = {
   totalEntries: number;
@@ -100,7 +102,8 @@ function SituaPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const eventId = searchParams.get('event');
+  const { selectedEventId } = useEventContext();
+  const eventId = searchParams.get('eventId');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -142,7 +145,7 @@ function SituaPage() {
           </CardHeader>
           <CardContent>
             <Button asChild>
-              <Link href="/dashboard">Vai alla Dashboard</Link>
+              <Link href={preserveEventId('/dashboard', selectedEventId)}>Vai alla Dashboard</Link>
             </Button>
           </CardContent>
         </Card>
@@ -184,7 +187,7 @@ function SituaPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href="/dashboard">
+            <Link href={preserveEventId('/dashboard', selectedEventId)}>
               <Calendar className="mr-2 h-4 w-4" />
               Dashboard
             </Link>

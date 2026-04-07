@@ -12,6 +12,7 @@ import { MobileNav } from '@/components/mobile-nav';
 import { useToast } from '@/hooks/use-toast';
 import { useEventContext } from '@/hooks/use-event-context';
 import { EventSelector } from '@/components/event-selector';
+import { preserveEventId } from '@/lib/event-navigation';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -749,7 +750,7 @@ export function DashboardPageClient() {
                     variant="outline"
                     className="glass border-blue-500/40 justify-start"
                   >
-                    <Link href="/analytics/general">
+                    <Link href={preserveEventId('/analytics/general', selectedEventId)}>
                       <BarChart3 className="mr-2 h-4 w-4" />
                       Dashboard Generale Aggregata
                     </Link>
