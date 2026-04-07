@@ -20,7 +20,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Users, UserPlus, Download, Upload, ArrowLeft, CheckCircle2, AlertCircle, CalendarDays, MapPin } from 'lucide-react';
+import { Users, UserPlus, Download, Upload, ArrowLeft, CheckCircle2, AlertCircle, CalendarDays, MapPin, Trash2, CheckCheck } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 type ListEntry = {
   id: string;
@@ -177,6 +178,19 @@ async function addListEntry(listId: string, entry: any) {
     body: JSON.stringify(entry),
   });
   if (!res.ok) throw new Error('Failed to add entry');
+  return res.json();
+}
+
+async function bulkUpdateEntries(listId: string, entryIds: string[], action: 'APPROVE' | 'REJECT') {
+  const res = await fetch(`/api/lists/${listId}/entries/bulk`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ entryIds, action }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Failed to update entries');
+  }
   return res.json();
 }
 
@@ -364,6 +378,117 @@ function ListaPageContent() {
   
   const entries: ListEntry[] = entriesData?.data?.entries || [];
   const selectedList = lists.find((l) => l.id === selectedListId);
+  const { toast } = useToast();
+  const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Bulk operations mutation
+  const bulkMutation = useMutation({
+    mutationFn: ({ action }: { action: 'APPROVE' | 'REJECT' }) =>
+      bulkUpdateEntries(selectedListId!, Array.from(selectedEntries), action),
+    onSuccess: (data) => {
+      toast({
+        title: 'Successo',
+        description: data.message || 'Persone aggiornate',
+      });
+      setSelectedEntries(new Set());
+      queryClient.invalidateQueries({
+        queryKey: ['list-entries', selectedListId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['my-lists'],
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Errore',
+        description: error.message || 'Impossibile aggiornare le persone',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Handle select all
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedEntries(new Set(entries.map((e) => e.id)));
+    } else {
+      setSelectedEntries(new Set());
+    }
+  };
+
+  // Handle single selection
+  const handleSelectEntry = (entryId: string, checked: boolean) => {
+    const newSelected = new Set(selectedEntries);
+    if (checked) {
+      newSelected.add(entryId);
+    } else {
+      newSelected.delete(entryId);
+    }
+    setSelectedEntries(newSelected);
+  };
+
+  // Handle bulk approve
+  const handleBulkApprove = () => {
+    if (selectedEntries.size === 0) return;
+    if (confirm(`Confermare ${selectedEntries.size} ${selectedEntries.size === 1 ? 'persona' : 'persone'}?`)) {
+      bulkMutation.mutate({ action: 'APPROVE' });
+    }
+  };
+
+  // Handle bulk reject
+  const handleBulkReject = () => {
+    if (selectedEntries.size === 0) return;
+    if (confirm(`Rifiutare ${selectedEntries.size} ${selectedEntries.size === 1 ? 'persona' : 'persone'}?`)) {
+      bulkMutation.mutate({ action: 'REJECT' });
+    }
+  };
+
+  // Handle CSV export
+  const handleExport = async () => {
+    if (!selectedListId) return;
+    setIsExporting(true);
+    try {
+      const params = new URLSearchParams();
+      if (filters.search) params.set('search', filters.search);
+      if (filters.gender) params.set('gender', filters.gender);
+      if (filters.status) params.set('status', filters.status);
+      
+      const res = await fetch(
+        `/api/lists/${selectedListId}/entries/export${params.toString() ? `?${params.toString()}` : ''}`
+      );
+      
+      if (!res.ok) throw new Error('Export failed');
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lista_${selectedList?.name || 'export'}_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: 'Successo',
+        description: 'Lista esportata correttamente',
+      });
+    } catch (error) {
+      toast({
+        title: 'Errore',
+        description: 'Impossibile esportare la lista',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Reset selections when list changes
+  useEffect(() => {
+    setSelectedEntries(new Set());
+  }, [selectedListId]);
 
   if (status === 'loading') {
     return (
@@ -564,22 +689,52 @@ function ListaPageContent() {
                         variant="ghost"
                         size="sm"
                         className="border border-border bg-card/50 text-foreground hover:bg-card/80"
-                      >
-                        <Upload className="mr-2 h-4 w-4" />
-                        Importa
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="border border-border bg-card/50 text-foreground hover:bg-card/80"
+                        onClick={handleExport}
+                        disabled={isExporting || entries.length === 0}
                       >
                         <Download className="mr-2 h-4 w-4" />
-                        Esporta
+                        {isExporting ? 'Esportazione...' : 'Esporta CSV'}
                       </Button>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
+                  {/* Bulk Actions Toolbar */}
+                  {selectedEntries.size > 0 && (
+                    <div className="mb-4 flex items-center justify-between rounded-lg border border-primary/30 bg-primary/10 px-4 py-3">
+                      <span className="text-sm font-medium text-foreground">
+                        {selectedEntries.size} {selectedEntries.size === 1 ? 'persona selezionata' : 'persone selezionate'}
+                      </span>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={handleBulkApprove}
+                          disabled={bulkMutation.isPending}
+                        >
+                          <CheckCheck className="mr-2 h-4 w-4" />
+                          Approva
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleBulkReject}
+                          disabled={bulkMutation.isPending}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Rifiuta
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedEntries(new Set())}
+                        >
+                          Deseleziona
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center">
                     <div className="flex-1">
                       <Input
@@ -628,75 +783,91 @@ function ListaPageContent() {
                   </div>
 
                   <div className="overflow-hidden rounded-2xl border border-border">
-                    <Table className="min-w-full">
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Nome</TableHead>
-                          <TableHead>Contatti</TableHead>
-                          <TableHead>Genere</TableHead>
-                          <TableHead>Stato</TableHead>
-                          <TableHead>Biglietti</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {entriesLoading ? (
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-full">
+                        <TableHeader>
                           <TableRow>
-                            <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
-                              Caricamento...
-                            </TableCell>
+                            <TableHead className="w-12">
+                              <Checkbox
+                                checked={entries.length > 0 && selectedEntries.size === entries.length}
+                                onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+                                aria-label="Seleziona tutti"
+                              />
+                            </TableHead>
+                            <TableHead>Nome</TableHead>
+                            <TableHead>Contatti</TableHead>
+                            <TableHead>Genere</TableHead>
+                            <TableHead>Stato</TableHead>
+                            <TableHead>Biglietti</TableHead>
                           </TableRow>
-                        ) : entries.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
-                              Nessuna persona in lista
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          entries.map((entry) => (
-                            <TableRow key={entry.id}>
-                              <TableCell className="font-medium text-foreground">
-                                {entry.firstName} {entry.lastName}
-                                {entry.plusOne && (
-                                  <span className="ml-2 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs text-accent">
-                                    +1
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                {entry.email && <div>{entry.email}</div>}
-                                {entry.phone && <div>{entry.phone}</div>}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">
-                                {formatGender(entry.gender)}
-                              </TableCell>
-                              <TableCell>
-                                <span
-                                  className={cn(
-                                    'rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-wide',
-                                    entry.status === 'CONFIRMED'
-                                      ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
-                                      : entry.status === 'REJECTED'
-                                      ? 'border-red-400/30 bg-red-400/10 text-red-200'
-                                      : 'border-amber-400/30 bg-amber-400/10 text-amber-200'
-                                  )}
-                                >
-                                  {entry.status}
-                                </span>
-                              </TableCell>
-                              <TableCell>
-                                {entry.tickets.length > 0 ? (
-                                  <span className="text-sm text-foreground">
-                                    {entry.tickets.length} biglietto/i
-                                  </span>
-                                ) : (
-                                  <span className="text-sm text-muted-foreground">-</span>
-                                )}
+                        </TableHeader>
+                        <TableBody>
+                          {entriesLoading ? (
+                            <TableRow>
+                              <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                                Caricamento...
                               </TableCell>
                             </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
+                          ) : entries.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                                Nessuna persona in lista
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            entries.map((entry) => (
+                              <TableRow key={entry.id}>
+                                <TableCell>
+                                  <Checkbox
+                                    checked={selectedEntries.has(entry.id)}
+                                    onCheckedChange={(checked) => handleSelectEntry(entry.id, checked as boolean)}
+                                    aria-label={`Seleziona ${entry.firstName} ${entry.lastName}`}
+                                  />
+                                </TableCell>
+                                <TableCell className="font-medium text-foreground">
+                                  {entry.firstName} {entry.lastName}
+                                  {entry.plusOne && (
+                                    <span className="ml-2 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs text-accent">
+                                      +1
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                  {entry.email && <div>{entry.email}</div>}
+                                  {entry.phone && <div>{entry.phone}</div>}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                  {formatGender(entry.gender)}
+                                </TableCell>
+                                <TableCell>
+                                  <span
+                                    className={cn(
+                                      'rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-wide',
+                                      entry.status === 'CONFIRMED'
+                                        ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
+                                        : entry.status === 'REJECTED'
+                                        ? 'border-red-400/30 bg-red-400/10 text-red-200'
+                                        : 'border-amber-400/30 bg-amber-400/10 text-amber-200'
+                                    )}
+                                  >
+                                    {entry.status}
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  {entry.tickets.length > 0 ? (
+                                    <span className="text-sm text-foreground">
+                                      {entry.tickets.length} biglietto/i
+                                    </span>
+                                  ) : (
+                                    <span className="text-sm text-muted-foreground">-</span>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
