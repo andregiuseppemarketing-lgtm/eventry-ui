@@ -18,7 +18,9 @@ import {
   RefreshCw,
   Filter,
   Download,
-  ArrowLeft
+  ArrowLeft,
+  ShoppingCart,
+  Ticket
 } from 'lucide-react';
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { TimelineChart } from '@/components/dashboard/timeline-chart';
@@ -39,6 +41,8 @@ interface DashboardData {
     newCustomers: number;
     returningCustomers: number;
     totalRevenue: number;
+    totalTicketRevenue: number;
+    totalConsumptionsRevenue: number;
     avgRevenuePerPerson: number;
     avgGroupSize: number;
     peakTimeSlot: string;
@@ -77,9 +81,18 @@ interface DashboardData {
   } | null;
   monetization: {
     totalRevenue: number;
+    ticketRevenue: number;
+    consumptionsRevenue: number;
     ticketTypeDistribution: Record<string, number>;
     ticketTypePercentages: Record<string, number>;
     revenueByType: Record<string, number>;
+  };
+  consumptions: {
+    total: number;
+    revenue: number;
+    avgPerConsumption: number;
+    byCategory: Record<string, number>;
+    revenueByCategory: Record<string, number>;
   };
 }
 
@@ -325,7 +338,22 @@ export function EventDashboardPageClient({
         />
       </div>
 
+      {/* Revenue breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <KpiCard
+          title="Revenue Biglietti"
+          value={`€${data.overview.totalTicketRevenue.toFixed(0)}`}
+          subtitle={`${((data.overview.totalTicketRevenue / data.overview.totalRevenue) * 100).toFixed(1)}% del totale`}
+          icon={Ticket}
+          iconColor="text-blue-500"
+        />
+        <KpiCard
+          title="Revenue Consumazioni"
+          value={`€${data.overview.totalConsumptionsRevenue.toFixed(0)}`}
+          subtitle={`${((data.overview.totalConsumptionsRevenue / data.overview.totalRevenue) * 100).toFixed(1)}% del totale`}
+          icon={ShoppingCart}
+          iconColor="text-green-500"
+        />
         <KpiCard
           title="Gruppo Medio"
           value={data.overview.avgGroupSize.toFixed(1)}
@@ -333,18 +361,30 @@ export function EventDashboardPageClient({
           icon={UsersRound}
           iconColor="text-purple-500"
         />
-        {data.topPr && (
-          <div className="md:col-span-2">
-            <KpiCard
-              title="🏆 Top PR della Serata"
-              value={data.topPr.name}
-              subtitle={`${data.topPr.entries} ingressi (${data.topPr.percentage}%)`}
-              icon={TrendingUp}
-              iconColor="text-yellow-500"
-            />
-          </div>
-        )}
       </div>
+
+      {/* Top PR */}
+      {data.topPr && (
+        <div className="mb-8">
+          <Card className="glass border-primary/40">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">🏆 Top PR della Serata</p>
+                  <h3 className="text-3xl font-bold gradient-text">{data.topPr.name}</h3>
+                  {data.topPr.instagram && (
+                    <p className="text-sm text-muted-foreground mt-1">@{data.topPr.instagram}</p>
+                  )}
+                </div>
+                <div className="text-right">
+                  <p className="text-4xl font-bold text-primary">{data.topPr.entries}</p>
+                  <p className="text-sm text-muted-foreground">ingressi ({data.topPr.percentage}%)</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* ===== B. TIMELINE INGRESSI ===== */}
       <div className="mb-8">
@@ -447,6 +487,110 @@ export function EventDashboardPageClient({
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* ===== F. CONSUMAZIONI ===== */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold mb-4">Consumazioni</h2>
+        
+        {data.consumptions.total === 0 ? (
+          <Card className="glass border-border">
+            <CardContent className="py-12 text-center">
+              <ShoppingCart className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+              <p className="text-muted-foreground">
+                Nessuna consumazione registrata per questo evento
+              </p>
+              <p className="text-sm text-muted-foreground/70 mt-2">
+                Le consumazioni al bar/servizi verranno mostrate qui quando disponibili
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* KPI Consumazioni */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <Card className="glass border-border">
+                <CardHeader>
+                  <CardTitle className="text-base">Totale Consumazioni</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold text-primary">{data.consumptions.total}</p>
+                </CardContent>
+              </Card>
+              <Card className="glass border-border">
+                <CardHeader>
+                  <CardTitle className="text-base">Revenue Consumazioni</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold text-green-500">
+                    €{data.consumptions.revenue.toFixed(0)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="glass border-border">
+                <CardHeader>
+                  <CardTitle className="text-base">Media per Consumazione</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold text-blue-500">
+                    €{data.consumptions.avgPerConsumption.toFixed(2)}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Breakdown per categoria */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Distribuzione categorie */}
+              {Object.keys(data.consumptions.byCategory).length > 0 && (
+                <PieChart
+                  title="Distribuzione per Categoria"
+                  description="Numero di consumazioni per tipo"
+                  data={Object.entries(data.consumptions.byCategory).map(([label, value]) => ({
+                    label: label.charAt(0).toUpperCase() + label.slice(1),
+                    value,
+                  }))}
+                />
+              )}
+
+              {/* Revenue per categoria */}
+              {Object.keys(data.consumptions.revenueByCategory).length > 0 && (
+                <Card className="glass border-border">
+                  <CardHeader>
+                    <CardTitle>Revenue per Categoria</CardTitle>
+                    <CardDescription>Incasso suddiviso per tipo di consumazione</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {Object.entries(data.consumptions.revenueByCategory)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([category, revenue]) => {
+                          const count = data.consumptions.byCategory[category] || 0;
+                          const avgPrice = count > 0 ? revenue / count : 0;
+                          return (
+                            <div
+                              key={category}
+                              className="flex items-center justify-between p-3 rounded-lg bg-muted/20"
+                            >
+                              <div>
+                                <span className="font-medium capitalize">{category}</span>
+                                <p className="text-xs text-muted-foreground">
+                                  {count} ordini · €{avgPrice.toFixed(2)} media
+                                </p>
+                              </div>
+                              <span className="text-green-500 font-semibold">
+                                €{revenue.toFixed(0)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
