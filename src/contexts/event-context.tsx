@@ -1,0 +1,233 @@
+'use client';
+
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter, usePathname } from 'next/navigation';
+
+interface Event {
+  id: string;
+  title: string;
+  dateStart: string;
+  dateEnd?: string | null;
+  status: 'DRAFT' | 'PUBLISHED' | 'CANCELLED';
+  venue?: {
+    name: string;
+    city?: string | null;
+  } | null;
+}
+
+interface EventContextType {
+  selectedEventId: string | null;
+  selectedEvent: Event | null;
+  selectEvent: (eventId: string) => void;
+  clearEvent: () => void;
+  isLoading: boolean;
+}
+
+const EventContext = createContext<EventContextType | undefined>(undefined);
+
+const STORAGE_KEY = 'eventry:selectedEventId';
+
+/**
+ * EventContextProvider
+ * 
+ * Gestisce lo stato globale dell'evento selezionato.
+ * 
+ * Priorità:
+ * 1. Query param ?eventId=xxx (source of truth)
+ * 2. localStorage (fallback/persistence)
+ * 3. null (no selection)
+ */
+export function EventContextProvider({ children }: { children: ReactNode }) {
+  const { status } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Ref to avoid re-registering popstate listener on every selectedEventId change
+  const selectedEventIdRef = useRef(selectedEventId);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    selectedEventIdRef.current = selectedEventId;
+  }, [selectedEventId]);
+
+  // Initialize: priorità URL > localStorage
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (isInitialized) return;
+
+    // Leggi eventId dall'URL usando window.location (client-side safe)
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const eventIdFromUrl = urlParams.get('eventId');
+      
+      if (eventIdFromUrl) {
+        // URL ha priorità assoluta
+        setSelectedEventId(eventIdFromUrl);
+        setIsInitialized(true);
+        return;
+      }
+
+      // Fallback a localStorage
+      const storedEventId = localStorage.getItem(STORAGE_KEY);
+      if (storedEventId) {
+        setSelectedEventId(storedEventId);
+      }
+    }
+
+    setIsInitialized(true);
+  }, [status, isInitialized]);
+
+  // Fetch event data quando cambia selectedEventId
+  useEffect(() => {
+    if (!selectedEventId || status !== 'authenticated') {
+      setSelectedEvent(null);
+      return;
+    }
+
+    let isCancelled = false;
+
+    async function fetchEvent() {
+      setIsLoading(true);
+      try {
+        const res = await fetch(`/api/events/${selectedEventId}`);
+        if (!res.ok) {
+          throw new Error('Event not found');
+        }
+        const data = await res.json();
+        const event = data.event || data;
+        
+        if (!isCancelled) {
+          setSelectedEvent(event);
+        }
+      } catch (error) {
+        console.error('Error fetching event:', error);
+        if (!isCancelled) {
+          setSelectedEvent(null);
+          // Clear invalid eventId
+          setSelectedEventId(null);
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(STORAGE_KEY);
+          }
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    fetchEvent();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [selectedEventId, status]);
+
+  // Sync con localStorage quando cambia selectedEventId
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    if (typeof window !== 'undefined') {
+      if (selectedEventId) {
+        localStorage.setItem(STORAGE_KEY, selectedEventId);
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+  }, [selectedEventId, isInitialized]);
+
+  // Listen to browser back/forward navigation (popstate event)
+  // Using ref to avoid re-registering listener on every selectedEventId change
+  useEffect(() => {
+    if (!isInitialized) return;
+    if (typeof window === 'undefined') return;
+
+    const handlePopState = () => {
+      // Browser navigation detected (back/forward)
+      // Read current URL and sync context state
+      const urlParams = new URLSearchParams(window.location.search);
+      const eventIdFromUrl = urlParams.get('eventId');
+
+      // Only update if different from current state (use ref for latest value)
+      if (eventIdFromUrl !== selectedEventIdRef.current) {
+        // Update state WITHOUT calling router.replace()
+        // (avoid creating new history entry)
+        setSelectedEventId(eventIdFromUrl);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isInitialized]); // Only re-register on init, not on every selectedEventId change
+
+  const selectEvent = (eventId: string) => {
+    setSelectedEventId(eventId);
+
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const currentEventIdFromUrl = urlParams.get('eventId');
+      
+      if (currentEventIdFromUrl !== eventId) {
+        // Costruisci nuovo URL con eventId
+        urlParams.set('eventId', eventId);
+        
+        // Non usare router.push per evitare navigation, solo replace query params
+        // Solo se non siamo in una route tipo /eventi/[id] o /analytics/[eventId]
+        const isDynamicEventRoute = pathname?.includes('/eventi/') || pathname?.includes('/analytics/');
+        
+        if (!isDynamicEventRoute) {
+          router.replace(`${pathname}?${urlParams.toString()}`, { scroll: false });
+        }
+      }
+    }
+  };
+
+  const clearEvent = () => {
+    setSelectedEventId(null);
+    setSelectedEvent(null);
+    
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      params.delete('eventId');
+      const queryString = params.toString();
+      router.replace(queryString ? `${pathname}?${queryString}` : pathname || '/', { scroll: false });
+    }
+  };
+
+  return (
+    <EventContext.Provider
+      value={{
+        selectedEventId,
+        selectedEvent,
+        selectEvent,
+        clearEvent,
+        isLoading,
+      }}
+    >
+      {children}
+    </EventContext.Provider>
+  );
+}
+
+/**
+ * useEventContext
+ * 
+ * Hook per accedere al context dell'evento selezionato.
+ * Deve essere usato dentro EventContextProvider.
+ */
+export function useEventContext() {
+  const context = useContext(EventContext);
+  if (context === undefined) {
+    throw new Error('useEventContext must be used within an EventContextProvider');
+  }
+  return context;
+}

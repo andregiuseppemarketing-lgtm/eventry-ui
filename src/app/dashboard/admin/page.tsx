@@ -13,7 +13,6 @@ import { UserManagement } from '@/components/admin/UserManagement';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-export const dynamic = 'force-dynamic';
 
 async function getAdminStats() {
   const [

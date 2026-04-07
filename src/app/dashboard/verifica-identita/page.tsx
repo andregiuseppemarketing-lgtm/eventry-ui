@@ -11,6 +11,9 @@ import { Shield, User, Calendar, FileText, CheckCircle2, XCircle, Clock } from '
 import { VerificationReviewDialog } from '@/components/verification-review-dialog';
 import { IdentityAnalytics } from '@/components/identity-analytics';
 import { PendingVerificationsSection } from '@/components/pending-verifications-section';
+import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
+
 
 export const metadata: Metadata = {
   title: 'Revisione Identità | Admin',
@@ -140,11 +143,23 @@ export default async function IdentityReviewPage() {
         {/* Analytics Section */}
         <div className="mb-8">
           <h2 className="mb-4 text-xl font-semibold text-white">Statistiche</h2>
-          <IdentityAnalytics />
+          <Suspense fallback={
+            <div className="flex h-48 items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          }>
+            <IdentityAnalytics />
+          </Suspense>
         </div>
 
         {/* Pending Verifications with Batch Approval */}
-        <PendingVerificationsSection verifications={pendingVerifications} />
+        <Suspense fallback={
+          <div className="flex h-96 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        }>
+          <PendingVerificationsSection verifications={pendingVerifications} />
+        </Suspense>
 
         {/* Recent Reviews */}
         <Card className="border-white/10 bg-zinc-900/50 p-6">

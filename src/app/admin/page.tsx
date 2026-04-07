@@ -16,7 +16,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Breadcrumbs } from '@/components/navigation/breadcrumbs';
 
-export const dynamic = 'force-dynamic';
 
 async function getDashboardData() {
   const [

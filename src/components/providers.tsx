@@ -3,6 +3,7 @@
 import { SessionProvider } from 'next-auth/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
+import { EventContextProvider } from '@/contexts/event-context';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 
@@ -42,11 +43,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
       refetchOnWindowFocus={false}
     >
       <QueryClientProvider client={queryClient}>
-        {children}
-        {process.env.NODE_ENV === 'development' && (
-          <ReactQueryDevtools initialIsOpen={false} />
-        )}
-        <Toaster />
+        <EventContextProvider>
+          {children}
+          {process.env.NODE_ENV === 'development' && (
+            <ReactQueryDevtools initialIsOpen={false} />
+          )}
+          <Toaster />
+        </EventContextProvider>
       </QueryClientProvider>
     </SessionProvider>
   );
