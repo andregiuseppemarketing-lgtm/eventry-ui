@@ -40,6 +40,8 @@ export async function POST(req: Request) {
         ticketPrice: true,
         maxGuests: true,
         status: true,
+        dateStart: true,
+        dateEnd: true,
       },
     });
 
@@ -53,6 +55,21 @@ export async function POST(req: Request) {
     if (event.status !== "PUBLISHED") {
       return NextResponse.json(
         { error: "Evento non disponibile per registrazioni" },
+        { status: 403 }
+      );
+    }
+
+    // Blocca registrazione a eventi scaduti
+    const now = new Date();
+    const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+    
+    const isExpired = event.dateEnd 
+      ? event.dateEnd < now 
+      : event.dateStart < sixHoursAgo;
+
+    if (isExpired) {
+      return NextResponse.json(
+        { error: "Evento già terminato, registrazione non più disponibile" },
         { status: 403 }
       );
     }
