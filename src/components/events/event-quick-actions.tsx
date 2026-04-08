@@ -79,14 +79,19 @@ export function EventQuickActions({
       variant: 'outline',
       roles: ['ADMIN', 'ORGANIZER', 'PR'],
     },
-    {
+  ];
+
+  // PAYMENTS FOUNDATION: Hide checkout when payments disabled
+  const paymentsEnabled = process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === 'true';
+  if (paymentsEnabled) {
+    allActions.push({
       label: 'Checkout',
       href: `/eventi/${eventId}/checkout`,
       icon: Ticket,
       variant: 'secondary',
       roles: ['USER'],
-    },
-  ];
+    });
+  }
 
   // Filtra azioni per ruolo
   const visibleActions = allActions.filter((action) =>

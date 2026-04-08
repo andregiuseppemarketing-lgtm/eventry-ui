@@ -55,6 +55,15 @@ export function CheckoutPageClient({ params }: CheckoutPageProps) {
     }
   }, [status, router]);
 
+  // PAYMENTS FOUNDATION: Route guard - redirect if payments disabled
+  useEffect(() => {
+    const paymentsEnabled = process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === 'true';
+    if (!paymentsEnabled && eventId) {
+      // Redirect to event detail with informative message
+      router.push(`/eventi/${eventId}?message=payments_disabled`);
+    }
+  }, [eventId, router]);
+
   const loadEvent = async (id: string) => {
     try {
       setLoading(true);

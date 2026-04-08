@@ -705,16 +705,19 @@ export function DashboardPageClient() {
                             Analytics
                           </Link>
                         </Button>
-                        <Button
-                          asChild
-                          variant="outline"
-                          className="glass border-green-500/40 justify-start"
-                        >
-                          <Link href={`/eventi/${selectedEventId}/checkout`}>
-                            <Ticket className="mr-2 h-4 w-4" />
-                            Checkout
-                          </Link>
-                        </Button>
+                        {/* PAYMENTS FOUNDATION: Hide checkout when payments disabled */}
+                        {process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === 'true' && (
+                          <Button
+                            asChild
+                            variant="outline"
+                            className="glass border-green-500/40 justify-start"
+                          >
+                            <Link href={`/eventi/${selectedEventId}/checkout`}>
+                              <Ticket className="mr-2 h-4 w-4" />
+                              Checkout
+                            </Link>
+                          </Button>
+                        )}
                         <Button
                           asChild
                           variant="outline"
