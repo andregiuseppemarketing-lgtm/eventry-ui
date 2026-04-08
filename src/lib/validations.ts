@@ -58,7 +58,7 @@ export const LoginSchema = z.object({
 });
 
 // Event schemas
-export const EventStatus = z.enum(['DRAFT', 'PUBLISHED', 'CLOSED']);
+export const EventStatus = z.enum(['DRAFT', 'PUBLISHED', 'CANCELLED', 'CLOSED']);
 
 export const CreateEventSchema = z.object({
   title: z.string().min(2).max(200),

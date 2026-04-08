@@ -90,6 +90,67 @@ export async function PATCH(
       );
     }
 
+    // M11: Pre-publish validation
+    // Only validate when transitioning TO published (not when already published)
+    if (newStatus === 'PUBLISHED' && event.status !== 'PUBLISHED') {
+      // Fetch full event for validation
+      const fullEvent = await prisma.event.findUnique({
+        where: { id: eventId },
+        include: {
+          venue: true,
+          lists: { select: { id: true } },
+          _count: { select: { tickets: true } },
+        },
+      });
+
+      if (!fullEvent) {
+        return NextResponse.json(
+          { error: 'Evento non trovato' },
+          { status: 404 }
+        );
+      }
+
+      // Validation checks
+      const issues: string[] = [];
+
+      // Title check
+      if (!fullEvent.title || fullEvent.title.trim().length < 5) {
+        issues.push('Il titolo deve essere di almeno 5 caratteri');
+      }
+
+      // Description check
+      if (!fullEvent.description || fullEvent.description.trim().length < 20) {
+        issues.push('La descrizione deve essere di almeno 20 caratteri');
+      }
+
+      // Cover image check
+      if (!fullEvent.coverUrl || fullEvent.coverUrl.trim().length === 0) {
+        issues.push('La locandina è obbligatoria');
+      }
+
+      // Venue check
+      if (!fullEvent.venue) {
+        issues.push('La location è obbligatoria');
+      }
+
+      // Date check
+      const eventDate = new Date(fullEvent.dateStart);
+      if (eventDate <= new Date()) {
+        issues.push('La data dell\'evento deve essere nel futuro');
+      }
+
+      // If validation fails, block publish
+      if (issues.length > 0) {
+        return NextResponse.json(
+          {
+            error: 'Evento incompleto. Completa i campi obbligatori prima di pubblicare.',
+            issues,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Aggiorna lo stato
     const updatedEvent = await prisma.event.update({
       where: { id: eventId },

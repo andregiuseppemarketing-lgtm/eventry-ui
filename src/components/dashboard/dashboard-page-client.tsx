@@ -147,6 +147,47 @@ function EventsList({ events, setActiveTab }: { events: Event[]; setActiveTab: (
   const [loadingEventId, setLoadingEventId] = useState<string | null>(null);
 
   const handleEventAction = async (eventId: string, action: string, eventTitle: string) => {
+    // M11: Pre-publish validation
+    if (action === 'publish') {
+      try {
+        const validationRes = await fetch(`/api/events/${eventId}/validate-publish`);
+        const validationData = await validationRes.json();
+
+        if (validationRes.ok && validationData.data) {
+          const { canPublish, issues, warnings } = validationData.data;
+
+          if (!canPublish) {
+            // Show validation errors
+            const issuesList = issues.map((issue: string) => `• ${issue}`).join('\n');
+            const warningsList = warnings && warnings.length > 0 
+              ? '\n\nAvvisi:\n' + warnings.map((w: string) => `• ${w}`).join('\n')
+              : '';
+            
+            alert(
+              `❌ Impossibile pubblicare l'evento.\n\n` +
+              `Completa i seguenti campi obbligatori:\n\n${issuesList}${warningsList}`
+            );
+            return;
+          }
+
+          // Show warnings if present (non-blocking)
+          if (warnings && warnings.length > 0) {
+            const warningsList = warnings.map((w: string) => `• ${w}`).join('\n');
+            const proceedWithWarnings = confirm(
+              `⚠️ Avvisi (non bloccanti):\n\n${warningsList}\n\n` +
+              `Vuoi procedere con la pubblicazione?`
+            );
+            if (!proceedWithWarnings) {
+              return;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Validation check failed:', error);
+        // Proceed anyway if validation endpoint fails (backward compatibility)
+      }
+    }
+
     const confirmMessages: Record<string, string> = {
       publish: `Sei sicuro di voler pubblicare "${eventTitle}"?`,
       draft: `Sei sicuro di voler nascondere "${eventTitle}"? L'evento sarà spostato nelle Bozze e non sarà più visibile pubblicamente.`,
@@ -174,6 +215,16 @@ function EventsList({ events, setActiveTab }: { events: Event[]; setActiveTab: (
       const data = await response.json();
 
       if (!response.ok) {
+        // M11: Show validation issues if present in error response
+        if (data.issues && Array.isArray(data.issues)) {
+          const issuesList = data.issues.map((issue: string) => `• ${issue}`).join('\n');
+          toast({
+            title: 'Evento incompleto',
+            description: `Completa i seguenti campi:\n${issuesList}`,
+            variant: 'destructive',
+          });
+          throw new Error('Validation failed');
+        }
         throw new Error(data.error || data.message || 'Errore durante l\'operazione');
       }
 
@@ -203,11 +254,13 @@ function EventsList({ events, setActiveTab }: { events: Event[]; setActiveTab: (
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       
     } catch (error) {
-      toast({
-        title: 'Errore',
-        description: error instanceof Error ? error.message : 'Si è verificato un errore',
-        variant: 'destructive',
-      });
+      if (error instanceof Error && error.message !== 'Validation failed') {
+        toast({
+          title: 'Errore',
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoadingEventId(null);
     }
