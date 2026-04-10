@@ -300,6 +300,20 @@ export function EventDetailPageClient({ params }: EventDetailPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Sticky CTA Mobile */}
+      {!isEventPast && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-background/95 backdrop-blur-sm border-t p-4">
+          <Button asChild className="w-full" size="lg">
+            <Link href={`/lista/${event.id}` as Route}>
+              {event.ticketType === 'FREE_LIST' ? 'Entra in Lista' : 
+               event.ticketType === 'DOOR_ONLY' ? 'Paga alla Cassa' : 
+               event.ticketType === 'PRE_SALE' ? 'Prenota Ora' : 
+               'Acquista Biglietto'}
+            </Link>
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

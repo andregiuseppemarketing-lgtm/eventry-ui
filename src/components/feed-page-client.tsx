@@ -20,6 +20,7 @@ interface FeedEvent {
   coverUrl: string | null;
   minAge: number | null;
   dressCode: string | null;
+  ticketType?: string | null;
   createdBy: {
     id: string;
     name: string;
@@ -34,6 +35,22 @@ interface FeedEvent {
     slug: string | null;
   } | null;
   createdAt: string;
+}
+
+// Helper: CTA dinamica basata su ticketType
+function getEventCTA(ticketType?: string | null): string {
+  switch (ticketType) {
+    case 'FREE_LIST':
+      return 'Entra in Lista';
+    case 'DOOR_ONLY':
+      return 'Paga alla Cassa';
+    case 'PRE_SALE':
+      return 'Prenota Ora';
+    case 'FULL_TICKET':
+      return 'Acquista Biglietto';
+    default:
+      return 'Partecipa';
+  }
 }
 
 interface FeedResponse {
@@ -262,7 +279,9 @@ export function FeedPageClient() {
                   {/* Actions */}
                   <div className="flex gap-2 pt-2">
                     <Button asChild className="flex-1">
-                      <Link href={`/eventi/${event.id}`}>Partecipa</Link>
+                      <Link href={`/eventi/${event.id}`}>
+                        {getEventCTA(event.ticketType)}
+                      </Link>
                     </Button>
                     <Button variant="outline" size="icon">
                       <Heart className="h-4 w-4" />

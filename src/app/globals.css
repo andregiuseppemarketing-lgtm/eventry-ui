@@ -112,6 +112,13 @@
   }
 }
 
+/* Mobile: compensazione padding per fixed bottom nav (64px) */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 64px;
+  }
+}
+
 @layer components {
   /* Buttons: Stripe-like con glow neon */
   .btn-primary {

@@ -113,10 +113,10 @@ export function EventQuickActions({
               asChild
               variant={action.variant}
               size="sm"
-              className="w-full"
+              className="w-full h-11 sm:h-auto"
             >
               <Link href={action.href as Route}>
-                <Icon className="w-4 h-4 mr-2" />
+                <Icon className="h-5 w-5 sm:h-4 sm:w-4 mr-2" />
                 {action.label}
               </Link>
             </Button>

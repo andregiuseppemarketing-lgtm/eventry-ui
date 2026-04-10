@@ -25,10 +25,29 @@ interface Event {
   dateStart: string;
   dateEnd?: string | null;
   status: 'DRAFT' | 'PUBLISHED' | 'CANCELLED';
+  ticketType?: string | null;
   venue?: {
     name: string;
     city?: string | null;
   } | null;
+}
+
+// Helper: CTA dinamica basata su ticketType e stato evento
+function getEventCTA(event: Event, isPast: boolean): string {
+  if (isPast) return 'Vedi Report';
+  
+  switch (event.ticketType) {
+    case 'FREE_LIST':
+      return 'Entra in Lista';
+    case 'DOOR_ONLY':
+      return 'Paga alla Cassa';
+    case 'PRE_SALE':
+      return 'Prenota Ora';
+    case 'FULL_TICKET':
+      return 'Acquista Biglietto';
+    default:
+      return 'Vedi Dettagli';
+  }
 }
 
 interface EventCardProps {
@@ -139,7 +158,9 @@ export function EventCard({ event, userRole }: EventCardProps) {
 
         {/* Action Button */}
         <Button asChild className="w-full mt-4" variant="outline">
-          <Link href={`/eventi/${event.id}` as Route}>Vedi Dettagli</Link>
+          <Link href={`/eventi/${event.id}` as Route}>
+            {getEventCTA(event, isEventPast)}
+          </Link>
         </Button>
       </CardContent>
     </Card>
