@@ -84,24 +84,27 @@ export async function POST(req: NextRequest) {
   if (authError) return authError;
 
   try {
-    // Check identity verification
-    if (!user!.identityVerified) {
-      return createApiResponse(
-        undefined,
-        'Devi verificare la tua identità per creare un club',
-        403
-      );
-    }
-
-    // Check age (21+)
-    if (user!.birthDate) {
-      const age = calculateAge(new Date(user!.birthDate));
-      if (age < 21) {
+    // ADMIN bypassa controlli identity/age
+    if (user!.role !== 'ADMIN') {
+      // Check identity verification (solo ORGANIZER)
+      if (!user!.identityVerified) {
         return createApiResponse(
           undefined,
-          'Devi avere almeno 21 anni per creare un club',
+          'Devi verificare la tua identità per creare un club',
           403
         );
+      }
+
+      // Check age (21+, solo ORGANIZER)
+      if (user!.birthDate) {
+        const age = calculateAge(new Date(user!.birthDate));
+        if (age < 21) {
+          return createApiResponse(
+            undefined,
+            'Devi avere almeno 21 anni per creare un club',
+            403
+          );
+        }
       }
     }
 
