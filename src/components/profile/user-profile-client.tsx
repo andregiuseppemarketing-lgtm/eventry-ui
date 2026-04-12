@@ -57,6 +57,7 @@ export function UserProfileClient({ slug, currentUserId }: UserProfileClientProp
   const [isFollowing, setIsFollowing] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(1);
+  const [error, setError] = useState<string | null>(null);
 
   const isOwner = currentUserId === profile?.id;
 
@@ -67,13 +68,20 @@ export function UserProfileClient({ slug, currentUserId }: UserProfileClientProp
 
   const fetchProfile = async () => {
     try {
+      setError(null);
       const res = await fetch(`/api/user/${slug}`);
       const data = await res.json();
+      
       if (data && !data.error) {
         setProfile(data);
+      } else {
+        setError(data.error || 'Profilo non trovato');
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
+      setError('Errore di connessione');
+      setIsLoading(false);
     }
   };
 
@@ -112,8 +120,30 @@ export function UserProfileClient({ slug, currentUserId }: UserProfileClientProp
     await fetchEvents(true);
   };
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-4">
+        <div className="text-6xl">😕</div>
+        <h1 className="text-2xl font-bold">Profilo non trovato</h1>
+        <p className="text-muted-foreground text-center max-w-md">
+          {error}
+        </p>
+        <a href="/feed" className="text-primary hover:underline">
+          Torna alla Home
+        </a>
+      </div>
+    );
+  }
+
   if (!profile) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">Caricamento...</div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          <p className="text-muted-foreground">Caricamento profilo...</p>
+        </div>
+      </div>
+    );
   }
 
   // Header component
