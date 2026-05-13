@@ -15,6 +15,7 @@ import {
   createAuditLog,
   getCurrentUser
 } from '@/lib/api';
+import { canCreateEventAsPage } from '@/lib/page-permissions';
 
 /**
  * GET /api/events
@@ -107,6 +108,14 @@ export async function POST(req: NextRequest) {
 
     const eventData = validatedData!;
 
+    // Fase 1A: Validate Page permission if pageId provided
+    if (eventData.pageId) {
+      const pagePermission = await canCreateEventAsPage(user.id, eventData.pageId);
+      if (!pagePermission.allowed) {
+        return createApiResponse(undefined, pagePermission.reason || 'Forbidden', 403);
+      }
+    }
+
     // Validate venue exists
     const venue = await prisma.venue.findUnique({
       where: { id: eventData.venueId },
@@ -126,15 +135,25 @@ export async function POST(req: NextRequest) {
 
     const event = await prisma.event.create({
       data: {
-        ...eventData,
+        title: eventData.title,
+        description: eventData.description,
+        coverUrl: eventData.coverUrl,
         dateStart,
         dateEnd,
-        createdByUserId: user.id,
+        status: eventData.status,
+        minAge: eventData.minAge,
+        dressCode: eventData.dressCode,
+        venueId: eventData.venueId,
+        createdByUserId: user.id, // Always track who created it
+        createdByPageId: eventData.pageId || null, // Optional: Page-based event
       },
       include: {
         venue: true,
         createdBy: {
           select: { id: true, name: true, email: true },
+        },
+        createdByPage: {
+          select: { id: true, type: true, name: true, slug: true },
         },
       },
     });
@@ -145,7 +164,10 @@ export async function POST(req: NextRequest) {
       'event.create',
       'Event',
       event.id,
-      { title: event.title }
+      { 
+        title: event.title,
+        pageId: eventData.pageId,
+      }
     );
 
     return createApiResponse(event, undefined, 201);

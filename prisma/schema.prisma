@@ -89,8 +89,26 @@ model User {
   userStats               UserStats?
   analyticsLogs           AnalyticsLog[]
   emailVerificationTokens EmailVerificationToken[]
+  ownedPages              Page[]                   @relation("PageOwner")
 
   @@map("users")
+}
+
+model Page {
+  id        String   @id @default(cuid())
+  type      PageType
+  name      String
+  slug      String   @unique
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner         User    @relation("PageOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  eventsCreated Event[] @relation("PageEvents")
+
+  @@index([ownerId])
+  @@index([slug])
+  @@map("pages")
 }
 
 model VerificationToken {
@@ -174,12 +192,14 @@ model Event {
   maxGuests       Int?             @default(0)
   venueId         String
   createdByUserId String
+  createdByPageId String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   assignments     Assignment[]
   consumptions    Consumption[]
   feedbacks       EventFeedback[]
   createdBy       User             @relation("EventCreator", fields: [createdByUserId], references: [id])
+  createdByPage   Page?            @relation("PageEvents", fields: [createdByPageId], references: [id], onDelete: SetNull)
   venue           Venue            @relation(fields: [venueId], references: [id], onDelete: Cascade)
   funnelTracking  FunnelTracking[]
   inviteLinks     InviteLink[]
@@ -191,6 +211,7 @@ model Event {
 
   @@index([status, dateStart])
   @@index([venueId])
+  @@index([createdByPageId])
   @@map("events")
 }
 
@@ -894,6 +915,14 @@ enum UserRole {
   USER
   SECURITY
   VENUE
+}
+
+enum PageType {
+  VENUE
+  ORGANIZATION
+  FESTIVAL
+  PR
+  ARTIST
 }
 
 enum EventStatus {

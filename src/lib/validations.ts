@@ -57,6 +57,19 @@ export const LoginSchema = z.object({
   password: z.string().min(1),
 });
 
+// Page schemas (Fase 1A)
+export const PageType = z.enum(['VENUE', 'ORGANIZATION', 'FESTIVAL', 'PR', 'ARTIST']);
+
+export const CreatePageSchema = z.object({
+  type: PageType,
+  name: z.string().min(2, 'Il nome deve contenere almeno 2 caratteri').max(100, 'Il nome non può superare 100 caratteri'),
+  slug: z.string()
+    .min(2, 'Lo slug deve contenere almeno 2 caratteri')
+    .max(50, 'Lo slug non può superare 50 caratteri')
+    .regex(/^[a-z0-9-]+$/, 'Lo slug può contenere solo lettere minuscole, numeri e trattini')
+    .toLowerCase(),
+});
+
 // Event schemas
 export const EventStatus = z.enum(['DRAFT', 'PUBLISHED', 'CANCELLED', 'CLOSED']);
 
@@ -70,6 +83,7 @@ export const CreateEventSchema = z.object({
   minAge: z.number().int().min(13).max(25).optional(),
   dressCode: z.string().max(100).optional(),
   venueId: z.string().cuid(),
+  pageId: z.string().cuid().optional(), // Fase 1A: eventi page-based
 });
 
 export const UpdateEventSchema = CreateEventSchema.partial();
@@ -253,6 +267,7 @@ export const LoginCredentialsSchema = z.object({
 // Export all schemas
 export type CreateUserInput = z.infer<typeof CreateUserSchema>;
 export type LoginInput = z.infer<typeof LoginSchema>;
+export type CreatePageInput = z.infer<typeof CreatePageSchema>;
 export type CreateEventInput = z.infer<typeof CreateEventSchema>;
 export type UpdateEventInput = z.infer<typeof UpdateEventSchema>;
 export type EventFiltersInput = z.infer<typeof EventFilters>;

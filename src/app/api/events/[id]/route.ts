@@ -8,6 +8,7 @@ import {
   ApiErrors,
   createAuditLog 
 } from '@/lib/api';
+import { canEditEvent } from '@/lib/page-permissions';
 
 /**
  * GET /api/events/[id]
@@ -93,9 +94,10 @@ export async function PATCH(
       return ApiErrors.notFound('Event');
     }
 
-    // Check permissions (only creator or admin can edit)
-    if (existingEvent.createdByUserId !== user.id && user.role !== 'ADMIN') {
-      return ApiErrors.forbidden();
+    // Fase 1A: Check permissions (supports both user-based and page-based events)
+    const permission = await canEditEvent(user.id, id, user.role);
+    if (!permission.allowed) {
+      return createApiResponse(undefined, permission.reason || 'Forbidden', 403);
     }
 
     // Validate venue if provided
@@ -132,6 +134,9 @@ export async function PATCH(
         venue: true,
         createdBy: {
           select: { id: true, name: true, email: true },
+        },
+        createdByPage: {
+          select: { id: true, type: true, name: true, slug: true },
         },
       },
     });
